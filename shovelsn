@@ -1,0 +1,103 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "Brainrot Menu",
+	LoadingTitle = "Brainrot Hub",
+	LoadingSubtitle = "by ChatGPT",
+	ConfigurationSaving = {
+		Enabled = false
+	}
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+-- Default pilihan
+local selectedNumber = "1"
+
+-- Status spam
+local swapSpam = false
+local sellSpam = false
+
+-- Dropdown pilih angka
+MainTab:CreateDropdown({
+	Name = "Select Number",
+	Options = {"1","2","3","4","5","6","7","8","9","10"},
+	CurrentOption = {"1"},
+	MultipleOptions = false,
+	Flag = "NumberSelect",
+	Callback = function(Option)
+		selectedNumber = Option[1]
+	end,
+})
+
+-- Toggle Spam Swap
+MainTab:CreateToggle({
+	Name = "Spam SwapBrainrot",
+	CurrentValue = false,
+	Flag = "SwapSpam",
+	Callback = function(Value)
+		swapSpam = Value
+
+		task.spawn(function()
+			while swapSpam do
+				local args = {
+					selectedNumber
+				}
+
+				game:GetService("ReplicatedStorage")
+					:WaitForChild("Remotes")
+					:WaitForChild("SwapBrainrotEvent")
+					:FireServer(unpack(args))
+
+				task.wait(0.1)
+			end
+		end)
+	end,
+})
+
+-- Toggle Spam Sell
+MainTab:CreateToggle({
+	Name = "Spam SellBrainrot",
+	CurrentValue = false,
+	Flag = "SellSpam",
+	Callback = function(Value)
+		sellSpam = Value
+
+		task.spawn(function()
+			while sellSpam do
+				local args = {
+					selectedNumber
+				}
+
+				game:GetService("ReplicatedStorage")
+					:WaitForChild("Remotes")
+					:WaitForChild("SellBrainrotEvent")
+					:FireServer(unpack(args))
+
+				task.wait(0.1)
+			end
+		end)
+	end,
+})
+
+-- Button manual Swap
+MainTab:CreateButton({
+	Name = "Swap Once",
+	Callback = function()
+		game:GetService("ReplicatedStorage")
+			:WaitForChild("Remotes")
+			:WaitForChild("SwapBrainrotEvent")
+			:FireServer(selectedNumber)
+	end,
+})
+
+-- Button manual Sell
+MainTab:CreateButton({
+	Name = "Sell Once",
+	Callback = function()
+		game:GetService("ReplicatedStorage")
+			:WaitForChild("Remotes")
+			:WaitForChild("SellBrainrotEvent")
+			:FireServer(selectedNumber)
+	end,
+})
