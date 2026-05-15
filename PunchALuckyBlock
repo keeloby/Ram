@@ -1,0 +1,421 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+local Window = Rayfield:CreateWindow({
+    Name = "Utility Hub",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "by ChatGPT",
+    ConfigurationSaving = {
+        Enabled = false
+    }
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+-- =========================
+-- RESET BUTTON
+-- =========================
+
+MainTab:CreateButton({
+    Name = "Enable Reset Button",
+    Callback = function()
+
+        if player.PlayerGui:FindFirstChild("ResetButtonGui") then
+            return
+        end
+
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "ResetButtonGui"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = player:WaitForChild("PlayerGui")
+
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, 120, 0, 35)
+        button.Position = UDim2.new(0.5, -60, 0.5, -18)
+        button.Text = "Reset"
+        button.BackgroundColor3 = Color3.fromRGB(255, 69, 58)
+        button.TextColor3 = Color3.new(1,1,1)
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = 20
+        button.BorderSizePixel = 0
+        button.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0,12)
+        corner.Parent = button
+
+        task.spawn(function()
+            while button.Parent do
+                local newColor = Color3.fromHSV(math.random(), 1, 1)
+
+                TweenService:Create(
+                    button,
+                    TweenInfo.new(0.5),
+                    {BackgroundColor3 = newColor}
+                ):Play()
+
+                task.wait(0.5)
+            end
+        end)
+
+        local dragging = false
+        local dragStart
+        local startPos
+        local moved = false
+        local resetCooldown = false
+
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+                dragging = true
+                moved = false
+                dragStart = input.Position
+                startPos = button.Position
+
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (
+                input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch
+            ) then
+
+                local delta = input.Position - dragStart
+
+                if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+                    moved = true
+                end
+
+                local newPos = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+
+                TweenService:Create(
+                    button,
+                    TweenInfo.new(0.05),
+                    {Position = newPos}
+                ):Play()
+            end
+        end)
+
+        button.MouseButton1Click:Connect(function()
+            if moved then return end
+            if resetCooldown then return end
+
+            resetCooldown = true
+
+            if player.Character then
+                player.Character:BreakJoints()
+            end
+
+            task.wait(6)
+            resetCooldown = false
+        end)
+    end
+})
+
+-- =========================
+-- PUNCH BUTTON
+-- =========================
+
+MainTab:CreateButton({
+    Name = "Enable Punch Button",
+    Callback = function()
+
+        if player.PlayerGui:FindFirstChild("PunchGui") then
+            return
+        end
+
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "PunchGui"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = player:WaitForChild("PlayerGui")
+
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, 120, 0, 35)
+        button.Position = UDim2.new(0.5, -60, 0.8, 0)
+        button.Text = "Punch"
+        button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        button.TextColor3 = Color3.new(1,1,1)
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = 20
+        button.BorderSizePixel = 0
+        button.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0,12)
+        corner.Parent = button
+
+        task.spawn(function()
+            while button.Parent do
+                local newColor = Color3.fromHSV(math.random(), 1, 1)
+
+                TweenService:Create(
+                    button,
+                    TweenInfo.new(0.5),
+                    {BackgroundColor3 = newColor}
+                ):Play()
+
+                task.wait(0.5)
+            end
+        end)
+
+        local dragging = false
+        local dragStart
+        local startPos
+        local moved = false
+
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+                dragging = true
+                moved = false
+                dragStart = input.Position
+                startPos = button.Position
+
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (
+                input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch
+            ) then
+
+                local delta = input.Position - dragStart
+
+                if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+                    moved = true
+                end
+
+                local newPos = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+
+                TweenService:Create(
+                    button,
+                    TweenInfo.new(0.05),
+                    {Position = newPos}
+                ):Play()
+            end
+        end)
+
+        button.MouseButton1Click:Connect(function()
+            if moved then return end
+
+            local args1 = {
+                "PunchStart"
+            }
+
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Requests")
+                :WaitForChild("Punch")
+                :FireServer(unpack(args1))
+
+            local args2 = {
+                "MinigameResult",
+                {
+                    fillFrac = 0.01777958869934082
+                }
+            }
+
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Requests")
+                :WaitForChild("Punch")
+                :FireServer(unpack(args2))
+        end)
+    end
+})
+
+-- =========================
+-- TELEPORT BUTTON
+-- =========================
+
+MainTab:CreateButton({
+    Name = "Enable Teleport Button",
+    Callback = function()
+
+        if player.PlayerGui:FindFirstChild("TeleportGui") then
+            return
+        end
+
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "TeleportGui"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = player:WaitForChild("PlayerGui")
+
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, 120, 0, 35)
+        button.Position = UDim2.new(0.5, -60, 0.7, 0)
+        button.Text = "Teleport"
+        button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        button.TextColor3 = Color3.new(1,1,1)
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = 20
+        button.BorderSizePixel = 0
+        button.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0,12)
+        corner.Parent = button
+
+        task.spawn(function()
+            while button.Parent do
+                local newColor = Color3.fromHSV(math.random(), 1, 1)
+
+                TweenService:Create(
+                    button,
+                    TweenInfo.new(0.5),
+                    {BackgroundColor3 = newColor}
+                ):Play()
+
+                task.wait(0.5)
+            end
+        end)
+
+        local dragging = false
+        local dragStart
+        local startPos
+        local moved = false
+
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+                dragging = true
+                moved = false
+                dragStart = input.Position
+                startPos = button.Position
+
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (
+                input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch
+            ) then
+
+                local delta = input.Position - dragStart
+
+                if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+                    moved = true
+                end
+
+                local newPos = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+
+                TweenService:Create(
+                    button,
+                    TweenInfo.new(0.05),
+                    {Position = newPos}
+                ):Play()
+            end
+        end)
+
+        button.MouseButton1Click:Connect(function()
+            if moved then return end
+
+            local character = player.Character or player.CharacterAdded:Wait()
+            local hrp = character:WaitForChild("HumanoidRootPart")
+
+            hrp.CFrame = CFrame.new(
+                -180.642944, 8.87972546, -366.66214,
+                -0.000652798859, 1.89912364e-10, 0.999999762,
+                -5.83805253e-08, 1, -2.28023156e-10,
+                -0.999999762, -5.83806639e-08, -0.000652798859
+            )
+        end)
+    end
+})
+
+-- =========================
+-- INSTANT INTERACT
+-- =========================
+
+MainTab:CreateToggle({
+    Name = "Instant Interact",
+    CurrentValue = false,
+    Callback = function(Value)
+        getgenv().InstantInteract = Value
+
+        while getgenv().InstantInteract do
+            pcall(function()
+                for _,v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        v.HoldDuration = 0
+                    end
+                end
+            end)
+
+            task.wait(1)
+        end
+    end
+})
+
+-- =========================
+-- RESPAWN SAME PLACE
+-- =========================
+
+local RespawnEnabled = false
+local LastPosition = nil
+
+MainTab:CreateToggle({
+    Name = "Respawn Same Place",
+    CurrentValue = false,
+    Callback = function(Value)
+        RespawnEnabled = Value
+    end
+})
+
+player.CharacterAdded:Connect(function(character)
+
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    humanoid.Died:Connect(function()
+        if RespawnEnabled and humanoidRootPart then
+            LastPosition = humanoidRootPart.CFrame
+        end
+    end)
+
+    if RespawnEnabled and LastPosition then
+        task.wait(0.5)
+
+        local newRoot = character:WaitForChild("HumanoidRootPart")
+        newRoot.CFrame = LastPosition
+    end
+end)
