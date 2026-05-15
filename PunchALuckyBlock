@@ -7,9 +7,9 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
-    Name = "Utility Hub",
+    Name = "Sigma Hub",
     LoadingTitle = "Loading...",
-    LoadingSubtitle = "by ChatGPT",
+    LoadingSubtitle = "by ???",
     ConfigurationSaving = {
         Enabled = false
     }
