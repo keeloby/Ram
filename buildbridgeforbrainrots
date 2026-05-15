@@ -1,0 +1,269 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local Window = Rayfield:CreateWindow({
+    Name = "Sigma Hub",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "by who",
+    ConfigurationSaving = {
+        Enabled = false
+    }
+})
+
+-- =========================
+-- MAIN TAB
+-- =========================
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+local SelectedSell = "1"
+local SelectedSwap = "1"
+
+local Numbers = {
+    "1","2","3","4","5",
+    "6","7","8","9","10"
+}
+
+-- SELL DROPDOWN
+MainTab:CreateDropdown({
+    Name = "Select Sell Number",
+    Options = Numbers,
+    CurrentOption = {"1"},
+    MultipleOptions = false,
+    Callback = function(Option)
+        SelectedSell = Option[1]
+    end
+})
+
+-- SWAP DROPDOWN
+MainTab:CreateDropdown({
+    Name = "Select Swap Number",
+    Options = Numbers,
+    CurrentOption = {"1"},
+    MultipleOptions = false,
+    Callback = function(Option)
+        SelectedSwap = Option[1]
+    end
+})
+
+-- AUTO SELL
+getgenv().AutoSell = false
+
+MainTab:CreateToggle({
+    Name = "Spam Sell Brainrot",
+    CurrentValue = false,
+    Callback = function(Value)
+        getgenv().AutoSell = Value
+
+        task.spawn(function()
+            while getgenv().AutoSell do
+                local args = {
+                    tostring(SelectedSell)
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remotes")
+                    :WaitForChild("SellBrainrotEvent")
+                    :FireServer(unpack(args))
+
+                task.wait(0.1)
+            end
+        end)
+    end
+})
+
+-- AUTO SWAP
+getgenv().AutoSwap = false
+
+MainTab:CreateToggle({
+    Name = "Spam Swap Brainrot",
+    CurrentValue = false,
+    Callback = function(Value)
+        getgenv().AutoSwap = Value
+
+        task.spawn(function()
+            while getgenv().AutoSwap do
+                local args = {
+                    tostring(SelectedSwap)
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remotes")
+                    :WaitForChild("SwapBrainrotEvent")
+                    :FireServer(unpack(args))
+
+                task.wait(0.1)
+            end
+        end)
+    end
+})
+
+-- =========================
+-- TELEPORT FUNCTION
+-- =========================
+
+local function teleport(cf)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+
+    if hrp then
+        hrp.CFrame = cf
+    end
+end
+
+-- =========================
+-- TELEPORT TAB
+-- =========================
+
+local TeleportTab = Window:CreateTab("Teleport", 4483362458)
+
+TeleportTab:CreateButton({
+    Name = "Teleport Common",
+    Callback = function()
+        teleport(CFrame.new(
+            -162.355881, 11.9098988, -39.5401802,
+            -0.908029914, 1.83015754e-08, -0.418905377,
+            -5.31514499e-10, 1, 4.4841169e-08,
+            0.418905377, 4.09397778e-08, -0.908029914
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Rare",
+    Callback = function()
+        teleport(CFrame.new(
+            -159.329605, 11.9098988, 38.3759041,
+            -0.993335366, 1.69821863e-08, -0.115260087,
+            4.42318226e-09, 1, 1.09218064e-07,
+            0.115260087, 1.07980348e-07, -0.993335366
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Epic",
+    Callback = function()
+        teleport(CFrame.new(
+            -158.32988, 11.9098978, 170.504242,
+            -0.903309584, 4.41121095e-09, 0.428989261,
+            -1.59675047e-08, 1, -4.39050858e-08,
+            -0.428989261, -4.65097756e-08, -0.903309584
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Legendary",
+    Callback = function()
+        teleport(CFrame.new(
+            -161.622498, 11.9098988, 301.555969,
+            -0.99445504, -6.69802269e-10, -0.105162576,
+            3.27287886e-09, 1, -3.73187241e-08,
+            0.105162576, -3.74559797e-08, -0.99445504
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Mythic",
+    Callback = function()
+        teleport(CFrame.new(
+            -164.879883, 11.9098988, 459.290253,
+            -0.995975435, -6.25565377e-09, 0.0896268785,
+            -8.53918991e-10, 1, 6.03074852e-08,
+            -0.0896268785, 5.99882384e-08, -0.995975435
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Secret",
+    Callback = function()
+        teleport(CFrame.new(
+            -148.385315, 11.9098988, 643.17511,
+            -0.995989859, 3.20947025e-09, -0.0894664824,
+            1.03297926e-09, 1, 2.43737492e-08,
+            0.0894664824, 2.41835885e-08, -0.995989859
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport God",
+    Callback = function()
+        teleport(CFrame.new(
+            -138.023392, 11.9098988, 833.718445,
+            -0.992985487, -3.19183657e-09, -0.118236169,
+            -2.75697846e-12, 1, -2.69722786e-08,
+            0.118236169, -2.67827556e-08, -0.992985487
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport OG",
+    Callback = function()
+        teleport(CFrame.new(
+            -139, 11.9098988, 1116,
+            1, -4.05326297e-08, -1.87572431e-14,
+            4.05326297e-08, 1, 1.64083396e-08,
+            1.80921714e-14, -1.64083396e-08, 1
+        ))
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport Safe",
+    Callback = function()
+        teleport(CFrame.new(
+            -99.4820328, 11.9098988, -123.647072,
+            -0.977035344, -1.11174971e-08, -0.213077247,
+            -2.04833768e-08, 1, 4.17477004e-08,
+            0.213077247, 4.515352e-08, -0.977035344
+        ))
+    end
+})
+
+-- =========================
+-- TELEPORT TAB 2
+-- =========================
+
+local TeleportTab2 = Window:CreateTab("Teleport 2", 4483362458)
+
+TeleportTab2:CreateButton({
+    Name = "Teleport Mutator",
+    Callback = function()
+        teleport(CFrame.new(
+            -198.474945, 11.9098988, 304.280365,
+            0.38223967, -4.56696156e-08, -0.924063206,
+            -2.91773006e-08, 1, -6.1491825e-08,
+            0.924063206, 5.04662871e-08, 0.38223967
+        ))
+    end
+})
+
+TeleportTab2:CreateButton({
+    Name = "Teleport Rainbow",
+    Callback = function()
+        teleport(CFrame.new(
+            -56, 12.6655512, 622,
+            1, -3.7803936e-08, 1.28795751e-13,
+            3.7803936e-08, 1, -4.17752304e-08,
+            -1.27216488e-13, 4.17752304e-08, 1
+        ))
+    end
+})
+
+TeleportTab2:CreateButton({
+    Name = "Teleport Fuse",
+    Callback = function()
+        teleport(CFrame.new(
+            -56, 12.7297716, 69,
+            1, 4.40374777e-08, 7.40275151e-14,
+            -4.40374777e-08, 1, 4.86685927e-08,
+            -7.18842778e-14, -4.86685927e-08, 1
+        ))
+    end
+})
