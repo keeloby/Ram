@@ -1,0 +1,74 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Sigma hub",
+   LoadingTitle = "???",
+   LoadingSubtitle = "by Jembot",
+   ConfigurationSaving = {
+      Enabled = false,
+   },
+   Discord = {
+      Enabled = false,
+   },
+   KeySystem = false,
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+-- Toggle Bubble
+local autoBubble = false
+
+MainTab:CreateToggle({
+   Name = "Auto Bubble",
+   CurrentValue = false,
+   Flag = "AutoBubble",
+   Callback = function(Value)
+      autoBubble = Value
+
+      while autoBubble do
+         local args = {
+            "Bubble"
+         }
+
+         game:GetService("ReplicatedStorage")
+            :WaitForChild("RemoteHandler")
+            :WaitForChild("Dumbbell")
+            :FireServer(unpack(args))
+
+         task.wait(0.1)
+      end
+   end,
+})
+
+-- Toggle Fishing
+local autoFishing = false
+
+MainTab:CreateToggle({
+   Name = "Auto Fishing",
+   CurrentValue = false,
+   Flag = "AutoFishing",
+   Callback = function(Value)
+      autoFishing = Value
+
+      while autoFishing do
+         local args = {
+            "Caught",
+            2000
+         }
+
+         game:GetService("ReplicatedStorage")
+            :WaitForChild("RemoteHandler")
+            :WaitForChild("Fishing")
+            :FireServer(unpack(args))
+
+         task.wait(0.1)
+      end
+   end,
+})
+
+Rayfield:Notify({
+   Title = "Loaded",
+   Content = "Fishing Hub berhasil dijalankan!",
+   Duration = 5,
+   Image = 4483362458,
+})
