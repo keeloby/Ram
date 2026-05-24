@@ -1,13 +1,14 @@
 easy :
-hewan :kucing , sapi, rusa
+hewan :kucing , sapi, rusa, ular
 anggota tubuh:tangan,kaki
- minuman :kopi, air
-  makanan :kue, soto
-anggota badan :gigi
-barang :mobil, bus, meja, kasur
+ minuman :kopi, air, susu
+  makanan :kue, soto, roti, sate
+anggota badan :gigi, bibir
+barang :mobil, bus, meja, kasur, sofa
 negara :Indonesia,china
 elemen :udara, tanah
-tempat :pasar
+tempat :pasar, gym, sekolah
+buah :apel, pir, jeruk
 
 
 hard
@@ -16,26 +17,35 @@ hewan :burung
 negara :inggris, kamboja
  buah :pepaya
   musisi :idgitaf, blackpink
-pekerjaan:nelayan
-tokoh:ganjar
+pekerjaan:nelayan, pilot
+tokoh:ganjar, jokowi
 twice? 
-anime :one piece
+anime :one piece, naruto
 kota:malang
-tempat:kampus
+tempat:kampus, palembang
+alat musik:saxofon
+benua :hindia
 
 medium 
 minuman :dawet, boba
 benua :eropa, asia
  benda :piring
 makanan :bakso, seblak
- buah :anggur
-hewan :kelinci
-kendaraan:perahu
-benda:jendelan
+ buah :anggur, kelapa
+hewan :kelinci, burung
+kendaraan:perahu, sepeda
+benda:jendelan, kacamata, mangkok, pensil
 kota:batam
 penyanyi :tulus
+anggota tubuh:punggung
 
 expert
-atletico :LeBron jame
+atletico :LeBron jame, michael Jordan
 penyayi :nadin amizah
-tiktoker :iben
+tiktoker :iben, bobon santoso
+makanan :pempek, gudeg
+exo
+bulu tangkis
+negara: italia
+
+ibukota :london
