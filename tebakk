@@ -4,7 +4,7 @@ anggota tubuh:tangan,kaki, perut
  minuman :kopi, air, susu
   makanan :kue, soto, roti, sate
 anggota badan :gigi, bibir
-barang :mobil, bus, meja, kasur, sofa
+barang :mobil, bus, meja, kasur, sofa, jam
 negara :Indonesia,china, korea, jepang
 elemen :udara, tanah
 tempat :pasar, gym, sekolah, mall
@@ -32,12 +32,11 @@ anggota tubuh :hati
 medium 
 minuman :dawet, boba
 benua :eropa, asia
- benda :piring, telepon, payung
+ benda :piring, telepon, payung, laptop,jendelan, kacamata, mangkok, pensil
 makanan :bakso, seblak, mie ayam
  buah :anggur, kelapa, pisang, alpukat, sawit
 hewan :kelinci, burung, buaya
 kendaraan:perahu, sepeda
-benda:jendelan, kacamata, mangkok, pensil
 kota:batam, bogor
 penyanyi :tulus, raisa
 anggota tubuh:punggung
