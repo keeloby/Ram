@@ -1,10 +1,10 @@
 easy :
-hewan :kucing , sapi, rusa, ular, tikus
+hewan :kucing , sapi, rusa, ular, tikus, katak
 anggota tubuh:tangan,kaki, perut
  minuman :kopi, air, susu
   makanan :kue, soto, roti, sate
 anggota badan :gigi, bibir
-barang :mobil, bus, meja, kasur, sofa, jam, motor
+barang :mobil, bus, meja, kasur, sofa, jam, motor, baju
 negara :Indonesia,china, korea, jepang
 elemen :udara, tanah
 tempat :pasar, gym, sekolah, mall
