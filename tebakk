@@ -5,7 +5,7 @@ anggota tubuh:tangan,kaki
   makanan :kue, soto, roti, sate
 anggota badan :gigi, bibir
 barang :mobil, bus, meja, kasur, sofa
-negara :Indonesia,china
+negara :Indonesia,china, korea
 elemen :udara, tanah
 tempat :pasar, gym, sekolah
 buah :apel, pir, jeruk
@@ -14,7 +14,7 @@ buah :apel, pir, jeruk
 hard
 hewan :burung,gorila, banteng
  game :ml
-negara :inggris, kamboja
+negara :inggris, kamboja, laos
  buah :pepaya
   musisi :idgitaf, blackpink
 pekerjaan:nelayan, pilot
