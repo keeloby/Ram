@@ -8,12 +8,12 @@ local Image = Instance.new("ImageLabel")
 Image.Parent = JumpscareGui
 Image.Size = UDim2.new(1,0,1,0)
 Image.BackgroundTransparency = 1
-Image.Image = "rbxassetid://95888439968635"
+Image.Image = "rbxassetid://140686756867361"
 Image.ImageTransparency = 1
 
 local Sound = Instance.new("Sound")
 Sound.Parent = workspace
-Sound.SoundId = "rbxassetid://6754147732"
+Sound.SoundId = "rbxassetid://5410086218"
 Sound.Volume = 10
 Sound:Play()
 
