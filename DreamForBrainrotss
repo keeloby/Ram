@@ -30,7 +30,6 @@ for i = 1,20 do
 end
 
 JumpscareGui:Destroy()
-Sound:Destroy()
 
 --// SIGMA DREAM GUI
 
