@@ -1,0 +1,110 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ResetButtonGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Tombol
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 120, 0, 35)
+button.Position = UDim2.new(0.5, -60, 0.5, -18)
+button.Text = "Reset"
+button.BackgroundColor3 = Color3.fromRGB(255, 69, 58)
+button.TextColor3 = Color3.new(1,1,1)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 20
+button.BorderSizePixel = 0
+button.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,12)
+corner.Parent = button
+
+-- Efek warna berubah
+task.spawn(function()
+	while true do
+		local newColor = Color3.fromHSV(math.random(), 1, 1)
+
+		TweenService:Create(
+			button,
+			TweenInfo.new(0.5),
+			{BackgroundColor3 = newColor}
+		):Play()
+
+		task.wait(0.5)
+	end
+end)
+
+local dragging = false
+local dragStart
+local startPos
+local moved = false
+local resetCooldown = false
+
+button.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		moved = false
+		dragStart = input.Position
+		startPos = button.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+
+		local delta = input.Position - dragStart
+
+		if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+			moved = true
+		end
+
+		local newPos = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+
+		TweenService:Create(
+			button,
+			TweenInfo.new(0.05),
+			{Position = newPos}
+		):Play()
+	end
+end)
+
+button.MouseButton1Click:Connect(function()
+	if moved then
+		return
+	end
+
+	if resetCooldown then
+		return
+	end
+
+	resetCooldown = true
+
+	if player.Character then
+		player.Character:BreakJoints()
+	end
+
+	task.wait(6)
+	resetCooldown = false
+end)
