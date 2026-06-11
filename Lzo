@@ -1,0 +1,272 @@
+-- Memasukkan GUI ke CoreGui agar aman dari reset karakter
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- Hapus GUI lama jika ada agar tidak menumpuk saat di-execute ulang
+if CoreGui:FindFirstChild("RGB_Custom_Hub_V4") then
+    CoreGui["RGB_Custom_Hub_V4"]:Destroy()
+end
+
+-- ScreenGui Utama
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RGB_Custom_Hub_V4"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame (Ukuran tinggi dinaikkan jadi 420 agar tombol baru muat)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 320, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -160, 0.4, -210)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Corner Bulat untuk Main Frame
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- Border Stroke untuk Efek RGB Pelangi
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2.5
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.Parent = MainFrame
+
+-- Judul GUI
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(0, 240, 0, 40)
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "SIGMA DREAM EXPLOIT v4 🌈"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 14
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = MainFrame
+
+-- Tombol Minimize [-]
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -40, 0, 5)
+MinimizeBtn.BackgroundTransparency = 1
+MinimizeBtn.Text = "[-]"
+MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+MinimizeBtn.TextSize = 16
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Parent = MainFrame
+
+-- Kontainer Konten
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -40)
+ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ContentFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.Parent = ContentFrame
+UIPadding.PaddingTop = UDim.new(0, 10)
+
+------------------------------------------------
+-- VARIABLES
+------------------------------------------------
+local CustomSpeedValue = 5
+
+------------------------------------------------
+-- FEATURE 1: SUMMON BRAINROTS
+------------------------------------------------
+local SummonBtn = Instance.new("TextButton")
+SummonBtn.Name = "SummonBtn"
+SummonBtn.Size = UDim2.new(0, 280, 0, 35)
+SummonBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SummonBtn.Text = "Summon Brainrots 😈"
+SummonBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+SummonBtn.TextSize = 13
+SummonBtn.Font = Enum.Font.GothamBold
+SummonBtn.Parent = ContentFrame
+
+local SummonCorner = Instance.new("UICorner")
+SummonCorner.CornerRadius = UDim.new(0, 6)
+SummonCorner.Parent = SummonBtn
+
+SummonBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local args = { workspace:WaitForChild("Locations"):WaitForChild("End") }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("SummonBrainrots"):FireServer(unpack(args))
+    end)
+end)
+
+------------------------------------------------
+-- FEATURE 2: INPUT SPEED
+------------------------------------------------
+local SpeedInput = Instance.new("TextBox")
+SpeedInput.Name = "SpeedInput"
+SpeedInput.Size = UDim2.new(0, 280, 0, 35)
+SpeedInput.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+SpeedInput.Text = ""
+SpeedInput.PlaceholderText = "Ketik jumlah speed kustom... (Default: 5)"
+SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+SpeedInput.TextSize = 12
+SpeedInput.Font = Enum.Font.Gotham
+SpeedInput.Parent = ContentFrame
+
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 6)
+InputCorner.Parent = SpeedInput
+
+SpeedInput.FocusLost:Connect(function()
+    local InputText = tonumber(SpeedInput.Text)
+    if InputText then CustomSpeedValue = InputText else SpeedInput.Text = "" end
+end)
+
+------------------------------------------------
+-- FEATURE 3: BUY CUSTOM SPEED
+------------------------------------------------
+local BuySpeedBtn = Instance.new("TextButton")
+BuySpeedBtn.Name = "BuySpeedBtn"
+BuySpeedBtn.Size = UDim2.new(0, 280, 0, 35)
+BuySpeedBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+BuySpeedBtn.Text = "⚡ Buy Custom Speed"
+BuySpeedBtn.TextColor3 = Color3.fromRGB(150, 200, 255)
+BuySpeedBtn.TextSize = 13
+BuySpeedBtn.Font = Enum.Font.GothamBold
+BuySpeedBtn.Parent = ContentFrame
+
+local BuySpeedCorner = Instance.new("UICorner")
+BuySpeedCorner.CornerRadius = UDim.new(0, 6)
+BuySpeedCorner.Parent = BuySpeedBtn
+
+BuySpeedBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("BuySpeed"):FireServer(CustomSpeedValue)
+    end)
+end)
+
+------------------------------------------------
+-- FEATURE 4: FREE REBIRTH (1 JUTA & JEDA 0.5s)
+------------------------------------------------
+local FreeRebirthBtn = Instance.new("TextButton")
+FreeRebirthBtn.Name = "FreeRebirthBtn"
+FreeRebirthBtn.Size = UDim2.new(0, 280, 0, 35)
+FreeRebirthBtn.BackgroundColor3 = Color3.fromRGB(45, 35, 35)
+FreeRebirthBtn.Text = "🔄 Free Rebirth (1M)"
+FreeRebirthBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
+FreeRebirthBtn.TextSize = 13
+FreeRebirthBtn.Font = Enum.Font.GothamBold
+FreeRebirthBtn.Parent = ContentFrame
+
+local RebirthCorner = Instance.new("UICorner")
+RebirthCorner.CornerRadius = UDim.new(0, 6)
+RebirthCorner.Parent = FreeRebirthBtn
+
+FreeRebirthBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local args1 = { 1000000 }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("BuySpeed"):FireServer(unpack(args1))
+        
+        task.wait(0.5)
+        
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Rebirth"):FireServer()
+    end)
+end)
+
+------------------------------------------------
+-- FEATURE 5: FREE REBIRTH 1 (CLICK FIRST)
+------------------------------------------------
+local FreeRebirth1Btn = Instance.new("TextButton")
+FreeRebirth1Btn.Name = "FreeRebirth1Btn"
+FreeRebirth1Btn.Size = UDim2.new(0, 280, 0, 35)
+FreeRebirth1Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 35)
+FreeRebirth1Btn.Text = "⚠️ Free Rebirth 1 (click first)"
+FreeRebirth1Btn.TextColor3 = Color3.fromRGB(255, 230, 150)
+FreeRebirth1Btn.TextSize = 13
+FreeRebirth1Btn.Font = Enum.Font.GothamBold
+FreeRebirth1Btn.Parent = ContentFrame
+
+local Rebirth1Corner = Instance.new("UICorner")
+Rebirth1Corner.CornerRadius = UDim.new(0, 6)
+Rebirth1Corner.Parent = FreeRebirth1Btn
+
+FreeRebirth1Btn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local args1 = { 1000 }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("BuySpeed"):FireServer(unpack(args1))
+        
+        task.wait(0.5)
+        
+        local args2 = { -1000 }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("BuySpeed"):FireServer(unpack(args2))
+    end)
+end)
+
+------------------------------------------------
+-- FEATURE 6: INF MONEY (-SPEED)
+------------------------------------------------
+local InfMoneyBtn = Instance.new("TextButton")
+InfMoneyBtn.Name = "InfMoneyBtn"
+InfMoneyBtn.Size = UDim2.new(0, 280, 0, 35)
+InfMoneyBtn.BackgroundColor3 = Color3.fromRGB(35, 45, 35)
+InfMoneyBtn.Text = "💰 Inf Money (-Speed)"
+InfMoneyBtn.TextColor3 = Color3.fromRGB(150, 255, 150)
+InfMoneyBtn.TextSize = 13
+InfMoneyBtn.Font = Enum.Font.GothamBold
+InfMoneyBtn.Parent = ContentFrame
+
+local InfMoneyCorner = Instance.new("UICorner")
+InfMoneyCorner.CornerRadius = UDim.new(0, 6)
+InfMoneyCorner.Parent = InfMoneyBtn
+
+InfMoneyBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local giantValue = "10000000000000000000000100000000000000000000001000000000000000000000010000000000000000000000100000000000000000000010000000000000000000000"
+        
+        local args1 = { tonumber(giantValue) or giantValue }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("BuySpeed"):FireServer(unpack(args1))
+        
+        task.wait(0.2)
+        
+        local args2 = { tonumber("-" .. giantValue) or "-" .. giantValue }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("BuySpeed"):FireServer(unpack(args2))
+    end)
+end)
+
+------------------------------------------------
+-- SCRIPT ANIMASI RGB (RAINBOW)
+------------------------------------------------
+RunService.RenderStepped:Connect(function()
+    local hue = tick() % 4 / 4
+    local rgbColor = Color3.fromHSV(hue, 1, 1)
+    UIStroke.Color = rgbColor
+    TitleLabel.TextColor3 = rgbColor
+end)
+
+------------------------------------------------
+-- FITUR MINIMIZE WINDOW (FIXED)
+------------------------------------------------
+local IsMinimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    IsMinimized = not IsMinimized
+    if IsMinimized then
+        ContentFrame.Visible = false
+        MainFrame:TweenSize(UDim2.new(0, 320, 0, 40), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.3, true)
+        MinimizeBtn.Text = "[+]"
+    else
+        MainFrame:TweenSize(UDim2.new(0, 320, 0, 420), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.3, true, function()
+            ContentFrame.Visible = true
+        end)
+        MinimizeBtn.Text = "[-]"
+    end
+end)
