@@ -1,0 +1,183 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local localPlayer = Players.LocalPlayer
+local myPlayerName = localPlayer.Name 
+
+-- Referensi Remote Event & Functions
+local remoteEvent, seedMachinePath, addPepperRemote
+pcall(function()
+	remoteEvent = ReplicatedStorage:WaitForChild("Events"):WaitForChild("SeedMachine"):WaitForChild("SpawnSeed")
+	seedMachinePath = workspace:WaitForChild("PlayerLots"):WaitForChild(myPlayerName):WaitForChild("Important"):WaitForChild("SeedMachine")
+	addPepperRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Brewing"):WaitForChild("AddPepper")
+end)
+
+-- Status Utama Makro
+local autoSeedEnabled = false
+local autoPepperEnabled = false
+local autoAddPepperEnabled = false
+
+-- Tabel untuk menampung benih apa saja yang sedang dicentang/aktif
+local selectedSeeds = {
+	["Tame Seed"] = true, -- Default aktif awal
+	["Painful Seed"] = false,
+	["Spicy Seed"] = false,
+	["Deadly Seed"] = false
+}
+
+-- ====================================================================
+-- INTERFACES: RAYFIELD UI INITIALIZATION
+-- ====================================================================
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🤫",
+   LoadingTitle = "Loading",
+   LoadingSubtitle = "by exo",
+   Theme = "Default", 
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil,
+      FileName = "AIO_Farm_Config"
+   },
+
+   KeySystem = false,
+})
+
+-- Create Tab Utama
+local FarmTab = Window:CreateTab("Main Farm", 4483362458)
+
+-- ====================================================================
+-- SECTION 1: AUTO SEED & MULTI-SELECT DROPDOWN
+-- ====================================================================
+FarmTab:CreateSection("Auto Seed Settings")
+
+FarmTab:CreateToggle({
+   Name = "Master Auto Seed",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoSeedEnabled = Value
+   end,
+})
+
+FarmTab:CreateDropdown({
+   Name = "Select Seed Types (Multi-Select)",
+   Options = {"Tame Seed", "Painful Seed", "Spicy Seed", "Deadly Seed"},
+   CurrentOption = {"Tame Seed"}, -- Pilihan awal saat script dibuka
+   MultipleOptions = true,        -- Mengaktifkan fitur pilih banyak (2/3/4 benih sekaligus)
+   Callback = function(Options)
+      -- Reset semua status ke false dulu sebelum membaca pilihan baru
+      for seed, _ in pairs(selectedSeeds) do
+         selectedSeeds[seed] = false
+      end
+      
+      -- Set isi tabel menjadi true untuk setiap benih yang dicentang oleh user
+      for _, seedName in pairs(Options) do
+         selectedSeeds[seedName] = true
+      end
+   end,
+})
+
+-- ====================================================================
+-- SECTION 2: AUTO PANEN & BREWING
+-- ====================================================================
+FarmTab:CreateSection("Harvest & Brewing")
+
+FarmTab:CreateToggle({
+   Name = "Smart Auto Pick Pepper (Infinite Range)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoPepperEnabled = Value
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Add Pepper to Pot (From Inventory)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoAddPepperEnabled = Value
+   end,
+})
+
+
+-- ====================================================================
+-- CORE LOOP AUTOMATION (HEARTBEAT)
+-- ====================================================================
+local function firePrompt(prompt)
+	if prompt and prompt:IsA("ProximityPrompt") and prompt.Enabled then
+		pcall(function()
+			prompt.MaxActivationDistance = math.huge -- Bypass Jarak Jauh
+			prompt:InputHoldBegin()
+			task.wait(prompt.HoldDuration)
+			prompt:InputHoldEnd()
+		end)
+	end
+end
+
+RunService.Heartbeat:Connect(function()
+	local playerLot = workspace.PlayerLots:FindFirstChild(myPlayerName)
+	if not playerLot then return end
+
+	-- [ RUN LOGIC: AUTO SEED MULTI-OPTIONS ]
+	if autoSeedEnabled and remoteEvent and seedMachinePath then
+		local shouldFireSeed = false
+		pcall(function()
+			-- Loop untuk memeriksa semua benih yang sedang dicentang di dropdown
+			for seedName, isSelected in pairs(selectedSeeds) do
+				if isSelected and seedMachinePath:FindFirstChild(seedName) then
+					shouldFireSeed = true
+					break -- Jika salah satu benih yang dicentang sedang dibutuhkan mesin, langsung eksekusi
+				end
+			end
+		end)
+		
+		if shouldFireSeed then
+			remoteEvent:FireServer()
+			task.wait(0.3)
+		end
+	end
+
+	-- [ RUN LOGIC: AUTO PEPPER ]
+	if autoPepperEnabled then
+		pcall(function()
+			for _, v in pairs(playerLot:GetDescendants()) do
+				if v:IsA("ProximityPrompt") and v.Name == "PickPepperPrompt" and v.Parent.Name == "Meat" then
+					firePrompt(v)
+					task.wait(0.02)
+				end
+			end
+		end)
+	end
+
+	-- [ RUN LOGIC: AUTO ADD PEPPER ]
+	if autoAddPepperEnabled and addPepperRemote then
+		pcall(function()
+			local backpack = localPlayer:FindFirstChild("Backpack")
+			if backpack then
+				for _, item in pairs(backpack:GetChildren()) do
+					if string.find(item.Name, "Pepper") then
+						local args = {
+							false,
+							item.Name
+						}
+						addPepperRemote:InvokeServer(unpack(args))
+						task.wait(0.1)
+					end
+				end
+			end
+		end)
+	end
+end)
+
+-- Notifikasi pembuka pertanda sukses berjalan
+Rayfield:Notify({
+   Name = "AIO Multi-Select Loaded",
+   Content = "Sekarang kamu bisa mencentang beberapa benih sekaligus di dalam dropdown!",
+   Duration = 5,
+   Image = 4483362458,
+})
