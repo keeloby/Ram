@@ -1,1 +1,324 @@
-f
+-- ==========================================
+-- 🛠️ AERO ULTRA - BACKEND ENGINE (FITUR)
+-- ==========================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local localPlayer = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+local mouse = localPlayer:GetMouse()
+
+local AeroEngine = {}
+
+-- State Variables
+AeroEngine.FlyMode = "OFF"
+AeroEngine.FlySpeed = 80
+AeroEngine.FlyStyle = "SUPERMAN"
+AeroEngine.FovWarpActive = true
+AeroEngine.AntiTpBack = false
+AeroEngine.Noclip = false
+AeroEngine.InfJump = false
+AeroEngine.ClickTp = false
+AeroEngine.AntiAfk = false
+AeroEngine.SpamDelay = 0.1
+AeroEngine.IsSpamming = false
+
+local lastValidCFrame = nil
+local noclipConnection = nil
+local flyConnection = nil
+local bodyVelocity = nil
+local bodyGyro = nil
+local activeVFX = {}
+local remoteSpamThread = nil
+local currentPlatform = nil
+
+-- Audio System
+function AeroEngine.PlaySound(soundId, volume, pitch)
+	task.spawn(function()
+		local sound = Instance.new("Sound")
+		sound.SoundId = "rbxassetid://" .. tostring(soundId)
+		sound.Volume = volume or 0.4
+		sound.PlaybackSpeed = pitch or 1
+		sound.Parent = SoundService
+		sound:Play()
+		sound.Ended:Connect(function() sound:Destroy() end)
+	end)
+end
+
+-- ==========================================
+-- 🛡️ ANTI TP-BACK ENGINE
+-- ==========================================
+RunService.Heartbeat:Connect(function()
+	if not AeroEngine.AntiTpBack then return end
+	local char = localPlayer.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		if lastValidCFrame then
+			local dist = (hrp.Position - lastValidCFrame.Position).Magnitude
+			if dist > 60 then
+				hrp.CFrame = lastValidCFrame
+			else
+				lastValidCFrame = hrp.CFrame
+			end
+		else
+			lastValidCFrame = hrp.CFrame
+		end
+	end
+end)
+
+function AeroEngine.ToggleAntiTpBack(state)
+	AeroEngine.AntiTpBack = state
+	if state and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		lastValidCFrame = localPlayer.Character.HumanoidRootPart.CFrame
+	end
+end
+
+-- ==========================================
+-- 📡 REMOTE SPAM ENGINE
+-- ==========================================
+function AeroEngine.StartRemoteSpam(remotePathFunc, argsTable)
+	AeroEngine.IsSpamming = true
+	remoteSpamThread = task.spawn(function()
+		while AeroEngine.IsSpamming do
+			pcall(function()
+				if remotePathFunc then
+					remotePathFunc(argsTable)
+				end
+			end)
+			task.wait(AeroEngine.SpamDelay)
+		end
+	end)
+end
+
+function AeroEngine.StopRemoteSpam()
+	AeroEngine.IsSpamming = false
+	if remoteSpamThread then
+		task.cancel(remoteSpamThread)
+		remoteSpamThread = nil
+	end
+end
+
+-- ==========================================
+-- ✈️ FLY ENGINE
+-- ==========================================
+local function applyVisualFX(hrp, primaryColor, secColor)
+	for _, vfx in pairs(activeVFX) do if vfx then vfx:Destroy() end end
+	table.clear(activeVFX)
+
+	local attCenterTop = Instance.new("Attachment", hrp)
+	attCenterTop.Position = Vector3.new(0, 1.2, 0)
+	local attCenterBottom = Instance.new("Attachment", hrp)
+	attCenterBottom.Position = Vector3.new(0, -1.2, 0)
+
+	local bodyTrail = Instance.new("Trail", hrp)
+	bodyTrail.Attachment0 = attCenterTop
+	bodyTrail.Attachment1 = attCenterBottom
+	bodyTrail.Texture = "rbxassetid://6015897233"
+	bodyTrail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, primaryColor or Color3.fromRGB(0, 230, 255)),
+		ColorSequenceKeypoint.new(0.6, secColor or Color3.fromRGB(0, 120, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+	})
+	bodyTrail.WidthScale = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
+	bodyTrail.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1)})
+	bodyTrail.Lifetime = 0.35
+	bodyTrail.LightEmission = 0.95
+	bodyTrail.Enabled = false
+
+	table.insert(activeVFX, attCenterTop)
+	table.insert(activeVFX, attCenterBottom)
+	table.insert(activeVFX, bodyTrail)
+
+	return {bodyTrail}
+end
+
+function AeroEngine.StopFlying()
+	AeroEngine.FlyMode = "OFF"
+	if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+	if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+	if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+	for _, vfx in pairs(activeVFX) do if vfx then vfx:Destroy() end end
+	table.clear(activeVFX)
+
+	local char = localPlayer.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then 
+			hum.PlatformStand = false
+			if char.PrimaryPart then
+				char:SetPrimaryPartCFrame(CFrame.new(char.PrimaryPart.Position) * CFrame.Angles(0, math.rad(char.PrimaryPart.Orientation.Y), 0))
+			end
+			TweenService:Create(hum, TweenInfo.new(0.4, Enum.EasingStyle.Cubic), {CameraOffset = Vector3.new(0, 0, 0)}):Play()
+		end
+	end
+	TweenService:Create(camera, TweenInfo.new(0.4, Enum.EasingStyle.Cubic), {FieldOfView = 70}):Play()
+end
+
+function AeroEngine.StartFlying(mode, primaryColor, secColor)
+	AeroEngine.StopFlying()
+
+	local char = localPlayer.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hrp or not hum then return end
+
+	AeroEngine.FlyMode = mode
+	hum.PlatformStand = true
+	local trailList = applyVisualFX(hrp, primaryColor, secColor)
+
+	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	bodyVelocity.Velocity = Vector3.zero
+	bodyVelocity.Parent = hrp
+
+	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bodyGyro.P = 60000 
+	bodyGyro.D = 600   
+	bodyGyro.CFrame = hrp.CFrame
+	bodyGyro.Parent = hrp
+
+	local currentVelocity = Vector3.zero
+	local currentRotationCFrame = CFrame.new(Vector3.zero, camera.CFrame.LookVector)
+
+	TweenService:Create(hum, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {CameraOffset = Vector3.new(0, 1.1, 1.1)}):Play()
+
+	flyConnection = RunService.Heartbeat:Connect(function(dt)
+		if AeroEngine.FlyMode == "OFF" or not char or not hrp or not hum then
+			AeroEngine.StopFlying()
+			return
+		end
+
+		local targetVelocity = Vector3.zero
+		local moveDir = hum.MoveDirection
+		local camCF = camera.CFrame
+		local bobbing = Vector3.new(0, math.sin(tick() * 5) * 1.2, 0)
+
+		if AeroEngine.FlyMode == "AUTO" then
+			targetVelocity = camCF.LookVector * AeroEngine.FlySpeed
+		elseif AeroEngine.FlyMode == "FREE" then
+			if moveDir.Magnitude > 0 then
+				local flatLook = Vector3.new(camCF.LookVector.X, 0, camCF.LookVector.Z).Unit
+				local flatRight = Vector3.new(camCF.RightVector.X, 0, camCF.RightVector.Z).Unit
+
+				local forwardAmt = moveDir:Dot(flatLook)
+				local rightAmt = moveDir:Dot(flatRight)
+
+				local flyDir = (camCF.LookVector * forwardAmt) + (camCF.RightVector * rightAmt)
+				if flyDir.Magnitude > 0 then
+					targetVelocity = flyDir.Unit * AeroEngine.FlySpeed
+				end
+			else
+				targetVelocity = bobbing
+			end
+		end
+
+		local lookDir = (targetVelocity.Magnitude > 2) and targetVelocity.Unit or camCF.LookVector
+		local tiltAngle = math.rad(-30)
+		if AeroEngine.FlyStyle == "SUPERMAN" then tiltAngle = math.rad(-90)
+		elseif AeroEngine.FlyStyle == "HOVER" then tiltAngle = math.rad(-10) end
+
+		local targetRotation = CFrame.lookAt(Vector3.zero, lookDir) * CFrame.Angles(tiltAngle, 0, 0)
+
+		currentRotationCFrame = currentRotationCFrame:Lerp(targetRotation, dt * 7)
+		currentVelocity = currentVelocity:Lerp(targetVelocity, dt * 9)
+
+		bodyGyro.CFrame = currentRotationCFrame
+		bodyVelocity.Velocity = currentVelocity
+		
+		if AeroEngine.FovWarpActive then
+			local speedRatio = math.clamp(targetVelocity.Magnitude / 300, 0, 1)
+			camera.FieldOfView = 70 + (speedRatio * 35)
+		end
+
+		local isMovingFast = targetVelocity.Magnitude > 5
+		for _, tr in ipairs(trailList) do
+			if tr then tr.Enabled = isMovingFast end
+		end
+	end)
+end
+
+-- ==========================================
+-- 👻 NOCLIP & UTILITIES
+-- ==========================================
+function AeroEngine.ToggleNoclip(state)
+	AeroEngine.Noclip = state
+	if state then
+		noclipConnection = RunService.Stepped:Connect(function()
+			local char = localPlayer.Character
+			if char then
+				for _, part in ipairs(char:GetDescendants()) do
+					if part:IsA("BasePart") and part.CanCollide then
+						part.CanCollide = false
+					end
+				end
+			end
+		end)
+	else
+		if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+	end
+end
+
+function AeroEngine.ToggleInfJump(state)
+	AeroEngine.InfJump = state
+end
+
+UserInputService.JumpRequest:Connect(function()
+	if AeroEngine.InfJump then
+		local char = localPlayer.Character
+		if char and char:FindFirstChildOfClass("Humanoid") then
+			char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end
+end)
+
+function AeroEngine.ToggleAntiAfk(state)
+	AeroEngine.AntiAfk = state
+end
+
+localPlayer.Idled:Connect(function()
+	if AeroEngine.AntiAfk then
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+	end
+end)
+
+-- ==========================================
+-- 🧱 PLATFORM BUILDER
+-- ==========================================
+function AeroEngine.SpawnPlatform(size, color)
+	if currentPlatform then currentPlatform:Destroy() end
+	if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		currentPlatform = Instance.new("Part", workspace)
+		currentPlatform.Name = "UserPlatform"
+		currentPlatform.Size = Vector3.new(size, 1, size)
+		currentPlatform.CFrame = localPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
+		currentPlatform.Anchored = true
+		currentPlatform.Material = Enum.Material.SmoothPlastic
+		currentPlatform.Color = color or Color3.fromRGB(0, 230, 255)
+		return currentPlatform
+	end
+	return nil
+end
+
+function AeroEngine.MovePlatform(vector)
+	if currentPlatform then
+		currentPlatform.CFrame += vector
+	end
+end
+
+function AeroEngine.DeletePlatform()
+	if currentPlatform then
+		currentPlatform:Destroy()
+		currentPlatform = nil
+	end
+end
+
+return AeroEngine
