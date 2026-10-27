@@ -1,1 +1,112 @@
-hi
+-- ==========================================
+-- 🎨 AERO ULTRA - FRONTEND (GUI)
+-- ==========================================
+local RAW_FITUR_URL = "https://raw.githubusercontent.com/keeloby/Ram/refs/heads/main/fitur"
+local success, AeroEngine = pcall(function()
+	return loadstring(game:HttpGet(RAW_FITUR_URL))()
+end)
+
+if not success or not AeroEngine then
+	warn("Gagal memuat Backend Fitur!")
+	return
+end
+
+local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local parentGui = (gethui and gethui()) or CoreGui or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+if parentGui:FindFirstChild("AeroModularUI") then
+	parentGui.AeroModularUI:Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AeroModularUI"
+screenGui.Parent = parentGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 260, 0, 240)
+mainFrame.Position = UDim2.new(0.5, -130, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "⚡ AERO MODULAR PANEL"
+title.TextColor3 = Color3.fromRGB(0, 230, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 12
+title.Parent = mainFrame
+
+local uiList = Instance.new("UIListLayout")
+uiList.SortOrder = Enum.SortOrder.LayoutOrder
+uiList.Padding = UDim.new(0, 8)
+uiList.Parent = mainFrame
+
+local pad = Instance.new("UIPadding")
+pad.PaddingTop = UDim.new(0, 35)
+pad.PaddingLeft = UDim.new(0, 10)
+pad.PaddingRight = UDim.new(0, 10)
+pad.Parent = mainFrame
+
+-- Fungsi pembuat tombol toggle sederhana
+local function createButton(text, callback)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 32)
+	btn.BackgroundColor3 = Color3.fromRGB(25, 35, 50)
+	btn.Text = text
+	btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 10
+	btn.Parent = mainFrame
+	
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 6)
+	c.Parent = btn
+	
+	btn.MouseButton1Click:Connect(callback)
+	return btn
+end
+
+-- 1. Tombol Anti TP-Back
+local tpState = false
+createButton("🛡️ Toggle Anti TP-Back", function()
+	tpState = not tpState
+	AeroEngine.ToggleAntiTpBack(tpState)
+	print("Anti TP-Back:", tpState)
+end)
+
+-- 2. Tombol Noclip
+local noclipState = false
+createButton("👻 Toggle Noclip", function()
+	noclipState = not noclipState
+	AeroEngine.ToggleNoclip(noclipState)
+	print("Noclip:", noclipState)
+end)
+
+-- 3. Tombol Remote Spam (Contoh: Training_TapBonus dengan Argument {2})
+local spamState = false
+createButton("📡 Toggle Spam Training_TapBonus", function()
+	spamState = not spamState
+	if spamState then
+		-- Mengatur Delay Spam
+		AeroEngine.SpamDelay = 0.1 
+		
+		-- Eksekusi Remote menggunakan argument kustom sesuai permintaanmu
+		AeroEngine.StartRemoteSpam(function(args)
+			ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Training_TapBonus"):InvokeServer(unpack(args))
+		end, {2}) -- Arguments {2} dikirim di sini
+		
+		print("Remote Spam Dimulai!")
+	else
+		AeroEngine.StopRemoteSpam()
+		print("Remote Spam Dihentikan!")
+	end
+end)
+
