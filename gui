@@ -1,112 +1,1924 @@
 -- ==========================================
--- 🎨 AERO ULTRA - FRONTEND (GUI)
+-- 🚀 AERO ULTRA V12.6 + ANTI TP-BACK & REMOTE SPAMMER
 -- ==========================================
-local RAW_FITUR_URL = "https://raw.githubusercontent.com/keeloby/Ram/refs/heads/main/fitur"
-local success, AeroEngine = pcall(function()
-	return loadstring(game:HttpGet(RAW_FITUR_URL))()
-end)
-
-if not success or not AeroEngine then
-	warn("Gagal memuat Backend Fitur!")
-	return
-end
-
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local VirtualUser = game:GetService("VirtualUser")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local parentGui = (gethui and gethui()) or CoreGui or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-if parentGui:FindFirstChild("AeroModularUI") then
-	parentGui.AeroModularUI:Destroy()
+local localPlayer = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+local mouse = localPlayer:GetMouse()
+
+local parentGui = (gethui and gethui()) or CoreGui or localPlayer:WaitForChild("PlayerGui")
+
+if parentGui:FindFirstChild("AeroFlyUltra_V12") then
+	parentGui.AeroFlyUltra_V12:Destroy()
 end
 
+-- Cleanup Crosshair Lama Jika Ada
+if getgenv().AeroCrosshair then
+	for _, line in pairs(getgenv().AeroCrosshair) do
+		pcall(function() line:Remove() end)
+	end
+	getgenv().AeroCrosshair = nil
+end
+
+-- ==========================================
+-- 🔊 AUDIO SYSTEM
+-- ==========================================
+local function playSound(soundId, volume, pitch)
+	task.spawn(function()
+		local sound = Instance.new("Sound")
+		sound.SoundId = "rbxassetid://" .. tostring(soundId)
+		sound.Volume = volume or 0.4
+		sound.PlaybackSpeed = pitch or 1
+		sound.Parent = SoundService
+		sound:Play()
+		sound.Ended:Connect(function() sound:Destroy() end)
+	end)
+end
+
+-- ==========================================
+-- 🎨 THEME ENGINE
+-- ==========================================
+local themes = {
+	{name = "CYAN NEON", primary = Color3.fromRGB(0, 230, 255), sec = Color3.fromRGB(0, 120, 255), bg = Color3.fromRGB(10, 14, 22)},
+	{name = "SAKURA PINK", primary = Color3.fromRGB(255, 60, 190), sec = Color3.fromRGB(255, 0, 110), bg = Color3.fromRGB(20, 10, 18)},
+	{name = "PURPLE PULSE", primary = Color3.fromRGB(190, 60, 255), sec = Color3.fromRGB(120, 0, 230), bg = Color3.fromRGB(16, 10, 24)},
+	{name = "EMERALD GREEN", primary = Color3.fromRGB(0, 255, 150), sec = Color3.fromRGB(0, 180, 100), bg = Color3.fromRGB(10, 20, 16)},
+	{name = "PLASMA RED", primary = Color3.fromRGB(255, 70, 70), sec = Color3.fromRGB(200, 20, 20), bg = Color3.fromRGB(22, 10, 10)}
+}
+local currentThemeIdx = 1
+local activeTheme = themes[1]
+
+-- ==========================================
+-- 🛑 REMOTE QUEUE / LAG SWITCH ENGINE
+-- ==========================================
+local isQueueActive = false
+local remoteQueue = {}
+
+-- ==========================================
+-- 🎨 SCREEN GUI & NOTIFICATION ENGINE
+-- ==========================================
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AeroModularUI"
+screenGui.Name = "AeroFlyUltra_V12"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = parentGui
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 240)
-mainFrame.Position = UDim2.new(0.5, -130, 0.3, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
+local notifContainer = Instance.new("Frame")
+notifContainer.Name = "NotifContainer"
+notifContainer.Size = UDim2.new(0, 190, 1, 0)
+notifContainer.Position = UDim2.new(1, -200, 0, 15)
+notifContainer.BackgroundTransparency = 1
+notifContainer.Parent = screenGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = mainFrame
+local notifLayout = Instance.new("UIListLayout")
+notifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+notifLayout.Padding = UDim.new(0, 6)
+notifLayout.Parent = notifContainer
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.Text = "⚡ AERO MODULAR PANEL"
-title.TextColor3 = Color3.fromRGB(0, 230, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 12
-title.Parent = mainFrame
+local function showNotif(title, text, customColor)
+	local color = customColor or activeTheme.primary
+	playSound(6895079853, 0.3, 1.2)
 
-local uiList = Instance.new("UIListLayout")
-uiList.SortOrder = Enum.SortOrder.LayoutOrder
-uiList.Padding = UDim.new(0, 8)
-uiList.Parent = mainFrame
+	local toast = Instance.new("Frame")
+	toast.Size = UDim2.new(1, 0, 0, 36)
+	toast.BackgroundColor3 = activeTheme.bg
+	toast.BackgroundTransparency = 0.15
+	toast.Position = UDim2.new(1, 220, 0, 0)
+	toast.Parent = notifContainer
 
-local pad = Instance.new("UIPadding")
-pad.PaddingTop = UDim.new(0, 35)
-pad.PaddingLeft = UDim.new(0, 10)
-pad.PaddingRight = UDim.new(0, 10)
-pad.Parent = mainFrame
+	local toastCorner = Instance.new("UICorner")
+	toastCorner.CornerRadius = UDim.new(0, 8)
+	toastCorner.Parent = toast
 
--- Fungsi pembuat tombol toggle sederhana
-local function createButton(text, callback)
+	local toastStroke = Instance.new("UIStroke")
+	toastStroke.Color = color
+	toastStroke.Thickness = 1.2
+	toastStroke.Parent = toast
+
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.new(0, 3, 1, 0)
+	bar.BackgroundColor3 = color
+	bar.BorderSizePixel = 0
+	bar.Parent = toast
+
+	local barCorner = Instance.new("UICorner")
+	barCorner.CornerRadius = UDim.new(0, 3)
+	barCorner.Parent = bar
+
+	local tTitle = Instance.new("TextLabel")
+	tTitle.Size = UDim2.new(1, -12, 0, 16)
+	tTitle.Position = UDim2.new(0, 10, 0, 3)
+	tTitle.BackgroundTransparency = 1
+	tTitle.Text = title
+	tTitle.TextColor3 = color
+	tTitle.Font = Enum.Font.GothamBold
+	tTitle.TextSize = 10
+	tTitle.TextXAlignment = Enum.TextXAlignment.Left
+	tTitle.Parent = toast
+
+	local tText = Instance.new("TextLabel")
+	tText.Size = UDim2.new(1, -12, 0, 14)
+	tText.Position = UDim2.new(0, 10, 0, 18)
+	tText.BackgroundTransparency = 1
+	tText.Text = text
+	tText.TextColor3 = Color3.fromRGB(220, 225, 235)
+	tText.Font = Enum.Font.Gotham
+	tText.TextSize = 8.5
+	tText.TextXAlignment = Enum.TextXAlignment.Left
+	tText.Parent = toast
+
+	TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+	task.delay(2.2, function()
+		if toast and toast.Parent then
+			local tw = TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+			tw:Play()
+			TweenService:Create(toastStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+			TweenService:Create(tTitle, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+			TweenService:Create(tText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+			tw.Completed:Connect(function() toast:Destroy() end)
+		end
+	end)
+end
+
+-- ==========================================
+-- 💎 MAIN CONTAINER & STAR VFX
+-- ==========================================
+local mainContainer = Instance.new("Frame")
+mainContainer.Name = "MainContainer"
+mainContainer.Size = UDim2.new(0, 240, 0, 320)
+mainContainer.Position = UDim2.new(0.5, -120, 0.25, 0)
+mainContainer.BackgroundColor3 = activeTheme.bg
+mainContainer.BackgroundTransparency = 0.15
+mainContainer.ClipsDescendants = true
+mainContainer.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainContainer
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = activeTheme.primary
+mainStroke.Thickness = 1.4
+mainStroke.Transparency = 0.1
+mainStroke.Parent = mainContainer
+
+local strokeGrad = Instance.new("UIGradient")
+strokeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, activeTheme.primary),
+	ColorSequenceKeypoint.new(0.5, activeTheme.sec),
+	ColorSequenceKeypoint.new(1, activeTheme.primary)
+})
+strokeGrad.Parent = mainStroke
+
+-- Background Stars System
+local starContainer = Instance.new("Frame")
+starContainer.Name = "StarContainer"
+starContainer.Size = UDim2.new(1, 0, 1, 0)
+starContainer.BackgroundTransparency = 1
+starContainer.ClipsDescendants = true
+starContainer.ZIndex = 5
+starContainer.Parent = mainContainer
+
+local starIcons = {"✦", "✧", "•", "+", "★"}
+for i = 1, 15 do
+	local star = Instance.new("TextLabel")
+	star.Size = UDim2.new(0, 12, 0, 12)
+	star.Position = UDim2.new(math.random(), 0, math.random(), 0)
+	star.BackgroundTransparency = 1
+	star.Text = starIcons[math.random(1, #starIcons)]
+	star.TextColor3 = activeTheme.primary
+	star.Font = Enum.Font.GothamBold
+	star.TextSize = math.random(8, 12)
+	star.TextTransparency = math.random(2, 6) / 10
+	star.ZIndex = 5
+	star.Parent = starContainer
+
+	task.spawn(function()
+		while star and star.Parent do
+			local duration = math.random(4, 7)
+			local startY = star.Position.Y.Scale
+			local targetY = startY - 0.3
+			
+			if targetY < -0.1 then 
+				targetY = 1.1 
+				star.Position = UDim2.new(math.random(), 0, 1.1, 0)
+			end
+
+			local tw = TweenService:Create(star, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+				Position = UDim2.new(star.Position.X.Scale, 0, targetY, 0),
+				TextTransparency = math.random(1, 7) / 10
+			})
+			tw:Play()
+			task.wait(duration)
+		end
+	end)
+end
+
+-- Floating Action Button (FAB)
+local fabBtn = Instance.new("TextButton")
+fabBtn.Name = "AeroFAB"
+fabBtn.Size = UDim2.new(0, 40, 0, 40)
+fabBtn.Position = UDim2.new(0, 15, 0.5, -20)
+fabBtn.BackgroundColor3 = activeTheme.bg
+fabBtn.Text = "🚀"
+fabBtn.TextSize = 18
+fabBtn.Visible = false
+fabBtn.ZIndex = 100
+fabBtn.Parent = screenGui
+
+local fabCorner = Instance.new("UICorner")
+fabCorner.CornerRadius = UDim.new(1, 0)
+fabCorner.Parent = fabBtn
+
+local fabStroke = Instance.new("UIStroke")
+fabStroke.Color = activeTheme.primary
+fabStroke.Thickness = 1.8
+fabStroke.Parent = fabBtn
+
+-- Header Panel
+local headerPanel = Instance.new("Frame")
+headerPanel.Size = UDim2.new(1, 0, 0, 34)
+headerPanel.BackgroundTransparency = 1 
+headerPanel.ZIndex = 10
+headerPanel.Parent = mainContainer
+
+local headerLine = Instance.new("Frame")
+headerLine.Size = UDim2.new(1, 0, 0, 1.5)
+headerLine.Position = UDim2.new(0, 0, 1, 0)
+headerLine.BackgroundColor3 = activeTheme.primary
+headerLine.BorderSizePixel = 0
+headerLine.Parent = headerPanel
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -40, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "AERO ULTRA V12.6"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.ZIndex = 11
+titleLabel.Parent = headerPanel
+
+local titleScaleConstraint = Instance.new("UITextSizeConstraint")
+titleScaleConstraint.MaxTextSize = 12
+titleScaleConstraint.MinTextSize = 8
+titleScaleConstraint.Parent = titleLabel
+
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 22, 0, 22)
+minBtn.AnchorPoint = Vector2.new(1, 0.5)
+minBtn.Position = UDim2.new(1, -6, 0.5, 0)
+minBtn.BackgroundColor3 = Color3.fromRGB(25, 34, 50)
+minBtn.Text = "—"
+minBtn.TextColor3 = activeTheme.primary
+minBtn.TextSize = 10
+minBtn.Font = Enum.Font.GothamBold
+minBtn.ZIndex = 11
+minBtn.Parent = headerPanel
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 5)
+minCorner.Parent = minBtn
+
+-- 🛠️ TAB BAR (4 TABS)
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 28)
+tabBar.Position = UDim2.new(0, 0, 0, 35)
+tabBar.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
+tabBar.BackgroundTransparency = 0.5
+tabBar.BorderSizePixel = 0
+tabBar.ClipsDescendants = true
+tabBar.ZIndex = 10
+tabBar.Parent = mainContainer
+
+local totalTabs = 4
+local tabIndicator = Instance.new("Frame")
+tabIndicator.Size = UDim2.new(1/totalTabs, 0, 0, 2)
+tabIndicator.Position = UDim2.new(0, 0, 1, -2)
+tabIndicator.BackgroundColor3 = activeTheme.primary
+tabIndicator.BorderSizePixel = 0
+tabIndicator.ZIndex = 12
+tabIndicator.Parent = tabBar
+
+local pagesFolder = Instance.new("Folder")
+pagesFolder.Name = "Pages"
+pagesFolder.Parent = mainContainer
+
+local tabs = {}
+local activeTabIndex = 1
+
+local function createTab(name, icon, pageIndex)
+	local xPosRatio = (pageIndex - 1) / totalTabs
+
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 32)
-	btn.BackgroundColor3 = Color3.fromRGB(25, 35, 50)
-	btn.Text = text
-	btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+	btn.Size = UDim2.new(1/totalTabs, 0, 1, 0)
+	btn.Position = UDim2.new(xPosRatio, 0, 0, 0)
+	btn.BackgroundTransparency = 1
+	btn.Text = icon .. " " .. name
+	btn.TextColor3 = Color3.fromRGB(140, 150, 170)
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 10
-	btn.Parent = mainFrame
-	
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, 6)
-	c.Parent = btn
-	
-	btn.MouseButton1Click:Connect(callback)
+	btn.TextScaled = true
+	btn.ZIndex = 11
+	btn.Parent = tabBar
+
+	local tabTextConstraint = Instance.new("UITextSizeConstraint")
+	tabTextConstraint.MaxTextSize = 8
+	tabTextConstraint.MinTextSize = 5
+	tabTextConstraint.Parent = btn
+
+	local page = Instance.new("ScrollingFrame")
+	page.Name = "Page_" .. name
+	page.Size = UDim2.new(1, 0, 1, -64)
+	page.Position = UDim2.new(0, 0, 0, 64)
+	page.BackgroundTransparency = 1
+	page.BorderSizePixel = 0
+	page.ScrollBarThickness = 2
+	page.ScrollBarImageColor3 = activeTheme.primary
+	page.Visible = false
+	page.CanvasSize = UDim2.new(0, 0, 0, 0)
+	page.ZIndex = 8
+	page.Parent = pagesFolder
+
+	local pLayout = Instance.new("UIListLayout")
+	pLayout.Padding = UDim.new(0, 5)
+	pLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	pLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	pLayout.Parent = page
+
+	local pPadding = Instance.new("UIPadding")
+	pPadding.PaddingTop = UDim.new(0, 5)
+	pPadding.PaddingBottom = UDim.new(0, 8)
+	pPadding.Parent = page
+
+	pLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		page.CanvasSize = UDim2.new(0, 0, 0, pLayout.AbsoluteContentSize.Y + 12)
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		playSound(6895079853, 0.25, 1.4)
+		for _, t in pairs(tabs) do
+			t.btn.TextColor3 = Color3.fromRGB(140, 150, 170)
+			t.page.Visible = false
+		end
+		btn.TextColor3 = activeTheme.primary
+		page.Visible = true
+		activeTabIndex = pageIndex
+
+		TweenService:Create(tabIndicator, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(xPosRatio, 0, 1, -2)
+		}):Play()
+	end)
+
+	table.insert(tabs, {btn = btn, page = page})
+	return page
+end
+
+local flyPage = createTab("FLY", "✈️", 1)
+local buildPage = createTab("BUILD", "🏗️", 2)
+local visPage = createTab("VISUAL", "🎨", 3)
+local utilPage = createTab("UTIL", "⚡", 4)
+
+tabs[1].btn.TextColor3 = activeTheme.primary
+tabs[1].page.Visible = true
+
+-- ==========================================
+-- 🎛️ COMPONENT BUILDERS
+-- ==========================================
+local function createButtonRow(parent, icon, text, callback)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.92, 0, 0, 28)
+	btn.BackgroundColor3 = Color3.fromRGB(18, 24, 36)
+	btn.Text = ""
+	btn.AutoButtonColor = false
+	btn.ZIndex = 8
+	btn.Parent = parent
+
+	local rowCorner = Instance.new("UICorner")
+	rowCorner.CornerRadius = UDim.new(0, 5)
+	rowCorner.Parent = btn
+
+	local rowStroke = Instance.new("UIStroke")
+	rowStroke.Color = Color3.fromRGB(35, 48, 70)
+	rowStroke.Thickness = 1
+	rowStroke.Parent = btn
+
+	local txtLbl = Instance.new("TextLabel")
+	txtLbl.Size = UDim2.new(1, -12, 1, 0)
+	txtLbl.Position = UDim2.new(0, 6, 0, 0)
+	txtLbl.BackgroundTransparency = 1
+	txtLbl.Text = icon .. " " .. text
+	txtLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+	txtLbl.Font = Enum.Font.GothamBold
+	txtLbl.TextScaled = true
+	txtLbl.TextXAlignment = Enum.TextXAlignment.Left
+	txtLbl.ZIndex = 9
+	txtLbl.Parent = btn
+
+	local txtConstraint = Instance.new("UITextSizeConstraint")
+	txtConstraint.MaxTextSize = 8.5
+	txtConstraint.MinTextSize = 6
+	txtConstraint.Parent = txtLbl
+
+	btn.MouseButton1Click:Connect(function()
+		playSound(6895079853, 0.25, 1.3)
+		callback()
+	end)
+
 	return btn
 end
 
--- 1. Tombol Anti TP-Back
-local tpState = false
-createButton("🛡️ Toggle Anti TP-Back", function()
-	tpState = not tpState
-	AeroEngine.ToggleAntiTpBack(tpState)
-	print("Anti TP-Back:", tpState)
+local function createToggleRow(parent, icon, text)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(0.92, 0, 0, 28)
+	row.BackgroundColor3 = Color3.fromRGB(18, 24, 36)
+	row.ZIndex = 8
+	row.Parent = parent
+
+	local rowCorner = Instance.new("UICorner")
+	rowCorner.CornerRadius = UDim.new(0, 5)
+	rowCorner.Parent = row
+
+	local rowStroke = Instance.new("UIStroke")
+	rowStroke.Color = Color3.fromRGB(35, 48, 70)
+	rowStroke.Thickness = 1
+	rowStroke.Parent = row
+
+	local icnLbl = Instance.new("TextLabel")
+	icnLbl.Size = UDim2.new(0, 24, 1, 0)
+	icnLbl.BackgroundTransparency = 1
+	icnLbl.Text = icon
+	icnLbl.TextSize = 11
+	icnLbl.ZIndex = 9
+	icnLbl.Parent = row
+
+	local txtLbl = Instance.new("TextLabel")
+	txtLbl.Size = UDim2.new(1, -62, 1, 0)
+	txtLbl.Position = UDim2.new(0, 24, 0, 0)
+	txtLbl.BackgroundTransparency = 1
+	txtLbl.Text = text
+	txtLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	txtLbl.Font = Enum.Font.GothamBold
+	txtLbl.TextScaled = true
+	txtLbl.TextXAlignment = Enum.TextXAlignment.Left
+	txtLbl.ZIndex = 9
+	txtLbl.Parent = row
+
+	local txtConstraint = Instance.new("UITextSizeConstraint")
+	txtConstraint.MaxTextSize = 8.5
+	txtConstraint.MinTextSize = 6
+	txtConstraint.Parent = txtLbl
+
+	local switchBg = Instance.new("TextButton")
+	switchBg.Size = UDim2.new(0, 28, 0, 14)
+	switchBg.AnchorPoint = Vector2.new(1, 0.5)
+	switchBg.Position = UDim2.new(1, -5, 0.5, 0)
+	switchBg.BackgroundColor3 = Color3.fromRGB(30, 40, 56)
+	switchBg.Text = ""
+	switchBg.AutoButtonColor = false
+	switchBg.ZIndex = 9
+	switchBg.Parent = row
+
+	local switchCorner = Instance.new("UICorner")
+	switchCorner.CornerRadius = UDim.new(1, 0)
+	switchCorner.Parent = switchBg
+
+	local switchKnob = Instance.new("Frame")
+	switchKnob.Size = UDim2.new(0, 10, 0, 10)
+	switchKnob.Position = UDim2.new(0, 2, 0.5, -5)
+	switchKnob.BackgroundColor3 = Color3.fromRGB(150, 160, 180)
+	switchKnob.ZIndex = 10
+	switchKnob.Parent = switchBg
+
+	local knobCorner = Instance.new("UICorner")
+	knobCorner.CornerRadius = UDim.new(1, 0)
+	knobCorner.Parent = switchKnob
+
+	local state = false
+
+	local function setToggle(val, silent)
+		state = val
+		if not silent then playSound(6895079853, 0.3, state and 1.5 or 0.9) end
+		if state then
+			TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = activeTheme.primary}):Play()
+			TweenService:Create(switchKnob, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -12, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+			TweenService:Create(rowStroke, TweenInfo.new(0.2), {Color = activeTheme.primary}):Play()
+			txtLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+		else
+			TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 40, 56)}):Play()
+			TweenService:Create(switchKnob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -5), BackgroundColor3 = Color3.fromRGB(150, 160, 180)}):Play()
+			TweenService:Create(rowStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(35, 48, 70)}):Play()
+			txtLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+		end
+	end
+
+	return switchBg, setToggle, function() return state end
+end
+
+local function createHybridSliderRow(parent, icon, title, minVal, maxVal, defaultVal, callback)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(0.92, 0, 0, 38)
+	row.BackgroundColor3 = Color3.fromRGB(18, 24, 36)
+	row.ZIndex = 8
+	row.Parent = parent
+
+	local rowCorner = Instance.new("UICorner")
+	rowCorner.CornerRadius = UDim.new(0, 5)
+	rowCorner.Parent = row
+
+	local rowStroke = Instance.new("UIStroke")
+	rowStroke.Color = Color3.fromRGB(35, 48, 70)
+	rowStroke.Thickness = 1
+	rowStroke.Parent = row
+
+	local headerLbl = Instance.new("TextLabel")
+	headerLbl.Size = UDim2.new(1, -55, 0, 16)
+	headerLbl.Position = UDim2.new(0, 6, 0, 2)
+	headerLbl.BackgroundTransparency = 1
+	headerLbl.Text = icon .. " " .. title
+	headerLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+	headerLbl.Font = Enum.Font.GothamBold
+	headerLbl.TextScaled = true
+	headerLbl.TextXAlignment = Enum.TextXAlignment.Left
+	headerLbl.ZIndex = 9
+	headerLbl.Parent = row
+
+	local headConstraint = Instance.new("UITextSizeConstraint")
+	headConstraint.MaxTextSize = 8.5
+	headConstraint.MinTextSize = 6
+	headConstraint.Parent = headerLbl
+
+	local txtBox = Instance.new("TextBox")
+	txtBox.Size = UDim2.new(0, 42, 0, 16)
+	txtBox.Position = UDim2.new(1, -48, 0, 2)
+	txtBox.BackgroundColor3 = Color3.fromRGB(28, 36, 52)
+	txtBox.Text = tostring(defaultVal)
+	txtBox.TextColor3 = activeTheme.primary
+	txtBox.Font = Enum.Font.GothamBold
+	txtBox.TextSize = 8.5
+	txtBox.ClearTextOnFocus = false
+	txtBox.ZIndex = 9
+	txtBox.Parent = row
+
+	local boxCorner = Instance.new("UICorner")
+	boxCorner.CornerRadius = UDim.new(0, 4)
+	boxCorner.Parent = txtBox
+
+	local sliderBar = Instance.new("TextButton")
+	sliderBar.Size = UDim2.new(1, -12, 0, 5)
+	sliderBar.Position = UDim2.new(0, 6, 0, 24)
+	sliderBar.BackgroundColor3 = Color3.fromRGB(30, 40, 56)
+	sliderBar.Text = ""
+	sliderBar.AutoButtonColor = false
+	sliderBar.ZIndex = 9
+	sliderBar.Parent = row
+
+	local barCorner = Instance.new("UICorner")
+	barCorner.CornerRadius = UDim.new(1, 0)
+	barCorner.Parent = sliderBar
+
+	local fillBar = Instance.new("Frame")
+	local initPct = math.clamp((defaultVal - minVal) / (maxVal - minVal), 0, 1)
+	fillBar.Size = UDim2.new(initPct, 0, 1, 0)
+	fillBar.BackgroundColor3 = activeTheme.primary
+	fillBar.BorderSizePixel = 0
+	fillBar.ZIndex = 10
+	fillBar.Parent = sliderBar
+
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(1, 0)
+	fillCorner.Parent = fillBar
+
+	local currentVal = defaultVal
+
+	local function updateValue(val, isFromSlider)
+		currentVal = val
+		local pct = math.clamp((val - minVal) / (maxVal - minVal), 0, 1)
+		
+		TweenService:Create(fillBar, TweenInfo.new(0.08, Enum.EasingStyle.Sine), {Size = UDim2.new(pct, 0, 1, 0)}):Play()
+		if isFromSlider then
+			txtBox.Text = tostring(math.floor(val * 100) / 100)
+		end
+		callback(val)
+	end
+
+	local isDragging = false
+	sliderBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			isDragging = true
+			local barAbsPos = sliderBar.AbsolutePosition.X
+			local barAbsSize = sliderBar.AbsoluteSize.X
+			local relativePct = math.clamp((input.Position.X - barAbsPos) / barAbsSize, 0, 1)
+			updateValue(minVal + (maxVal - minVal) * relativePct, true)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local barAbsPos = sliderBar.AbsolutePosition.X
+			local barAbsSize = sliderBar.AbsoluteSize.X
+			local relativePct = math.clamp((input.Position.X - barAbsPos) / barAbsSize, 0, 1)
+			updateValue(minVal + (maxVal - minVal) * relativePct, true)
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			isDragging = false
+		end
+	end)
+
+	txtBox.FocusLost:Connect(function()
+		local num = tonumber(txtBox.Text)
+		if num and num >= 0 then
+			updateValue(num, false)
+			playSound(6895079853, 0.2, 1.3)
+		else
+			txtBox.Text = tostring(currentVal)
+		end
+	end)
+
+	return updateValue
+end
+
+-- ==========================================
+-- ⚙️ FLY CONTROLS SETUP
+-- ==========================================
+local autoSwitch, setAuto, getAuto = createToggleRow(flyPage, "🚀", "AUTO FLY MODE [F]")
+local freeSwitch, setFree, getFree = createToggleRow(flyPage, "🎮", "FREE FLY MODE")
+
+local flySpeedValue = 80
+local setFlySpeed = createHybridSliderRow(flyPage, "⚡", "FLY SPEED", 10, 500, 80, function(v)
+	flySpeedValue = v
 end)
 
--- 2. Tombol Noclip
-local noclipState = false
-createButton("👻 Toggle Noclip", function()
-	noclipState = not noclipState
-	AeroEngine.ToggleNoclip(noclipState)
-	print("Noclip:", noclipState)
-end)
+local styleBtn = Instance.new("TextButton")
+styleBtn.Size = UDim2.new(0.92, 0, 0, 28)
+styleBtn.BackgroundColor3 = Color3.fromRGB(18, 24, 36)
+styleBtn.Text = ""
+styleBtn.AutoButtonColor = false
+styleBtn.ZIndex = 8
+styleBtn.Parent = flyPage
 
--- 3. Tombol Remote Spam (Contoh: Training_TapBonus dengan Argument {2})
-local spamState = false
-createButton("📡 Toggle Spam Training_TapBonus", function()
-	spamState = not spamState
-	if spamState then
-		-- Mengatur Delay Spam
-		AeroEngine.SpamDelay = 0.1 
-		
-		-- Eksekusi Remote menggunakan argument kustom sesuai permintaanmu
-		AeroEngine.StartRemoteSpam(function(args)
-			ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Training_TapBonus"):InvokeServer(unpack(args))
-		end, {2}) -- Arguments {2} dikirim di sini
-		
-		print("Remote Spam Dimulai!")
-	else
-		AeroEngine.StopRemoteSpam()
-		print("Remote Spam Dihentikan!")
+local styleCorner = Instance.new("UICorner")
+styleCorner.CornerRadius = UDim.new(0, 5)
+styleCorner.Parent = styleBtn
+
+local styleStroke = Instance.new("UIStroke")
+styleStroke.Color = Color3.fromRGB(35, 48, 70)
+styleStroke.Thickness = 1
+styleStroke.Parent = styleBtn
+
+local styleLbl = Instance.new("TextLabel")
+styleLbl.Size = UDim2.new(1, -12, 1, 0)
+styleLbl.Position = UDim2.new(0, 6, 0, 0)
+styleLbl.BackgroundTransparency = 1
+styleLbl.Text = "🥋 STYLE: SUPERMAN"
+styleLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+styleLbl.Font = Enum.Font.GothamBold
+styleLbl.TextScaled = true
+styleLbl.TextXAlignment = Enum.TextXAlignment.Left
+styleLbl.ZIndex = 9
+styleLbl.Parent = styleBtn
+
+local styleLblConstraint = Instance.new("UITextSizeConstraint")
+styleLblConstraint.MaxTextSize = 8.5
+styleLblConstraint.MinTextSize = 6
+styleLblConstraint.Parent = styleLbl
+
+-- ==========================================
+-- 🧱 PLATFORM BUILDER SETUP (BUILD TAB)
+-- ==========================================
+local currentPlatform = nil
+local currentSize = 10
+local moveStep = 2
+
+createButtonRow(buildPage, "📦", "SPAWN PLATFORM", function()
+	if currentPlatform then currentPlatform:Destroy() end
+	if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		currentPlatform = Instance.new("Part", workspace)
+		currentPlatform.Name = "UserPlatform"
+		currentPlatform.Size = Vector3.new(currentSize, 1, currentSize)
+		currentPlatform.CFrame = localPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
+		currentPlatform.Anchored = true
+		currentPlatform.Material = Enum.Material.SmoothPlastic
+		currentPlatform.Color = activeTheme.primary
+		showNotif("📦 PLATFORM", "Platform Dibuat!", activeTheme.primary)
 	end
 end)
 
+createButtonRow(buildPage, "⬆️", "MOVE UP", function()
+	if currentPlatform then
+		currentPlatform.CFrame += Vector3.new(0, moveStep, 0)
+	end
+end)
+
+createButtonRow(buildPage, "⬇️", "MOVE DOWN", function()
+	if currentPlatform then
+		currentPlatform.CFrame += Vector3.new(0, -moveStep, 0)
+	end
+end)
+
+createButtonRow(buildPage, "🔄", "ROTATE X (15°)", function()
+	if currentPlatform then
+		currentPlatform.CFrame *= CFrame.Angles(math.rad(15), 0, 0)
+	end
+end)
+
+createButtonRow(buildPage, "🎯", "RESET ROTATION", function()
+	if currentPlatform then
+		currentPlatform.CFrame = CFrame.new(currentPlatform.Position)
+	end
+end)
+
+createButtonRow(buildPage, "🗑️", "DELETE PLATFORM", function()
+	if currentPlatform then
+		currentPlatform:Destroy()
+		currentPlatform = nil
+		showNotif("🗑️ PLATFORM", "Platform Dihapus", Color3.fromRGB(255, 80, 80))
+	end
+end)
+
+createHybridSliderRow(buildPage, "📏", "SIZE", 5, 100, 10, function(v)
+	currentSize = v
+	if currentPlatform then
+		currentPlatform.Size = Vector3.new(currentSize, 1, currentSize)
+	end
+end)
+
+createHybridSliderRow(buildPage, "↕️", "STEP", 1, 20, 2, function(v)
+	moveStep = v
+end)
+
+-- ==========================================
+-- 🎨 VISUAL PAGE SETUP
+-- ==========================================
+local fovWarpActive = true
+local fovSwitch, setFovWarp, getFovWarp = createToggleRow(visPage, "🌌", "SPEED FOV WARP")
+setFovWarp(true)
+
+-- Crosshair Engine
+local crosshairEnabled = false
+local crosshairSize = 10
+local crosshairLines = {}
+
+if Drawing then
+	local function createLine()
+		local l = Drawing.new("Line")
+		l.Thickness = 1.5
+		l.Color = activeTheme.primary
+		l.Transparency = 1
+		l.Visible = false
+		return l
+	end
+	crosshairLines = {createLine(), createLine(), createLine(), createLine()}
+	getgenv().AeroCrosshair = crosshairLines
+end
+
+local crosshairSwitch, setCrosshair, getCrosshair = createToggleRow(visPage, "🎯", "CROSSHAIR")
+
+local function updateCrosshair()
+	if not Drawing then return end
+	local vp = camera.ViewportSize
+	local center = Vector2.new(vp.X / 2, vp.Y / 2)
+	
+	if crosshairEnabled then
+		crosshairLines[1].From = center - Vector2.new(crosshairSize, 0)
+		crosshairLines[1].To = center - Vector2.new(3, 0)
+		crosshairLines[2].From = center + Vector2.new(3, 0)
+		crosshairLines[2].To = center + Vector2.new(crosshairSize, 0)
+		crosshairLines[3].From = center - Vector2.new(0, crosshairSize)
+		crosshairLines[3].To = center - Vector2.new(0, 3)
+		crosshairLines[4].From = center + Vector2.new(0, 3)
+		crosshairLines[4].To = center + Vector2.new(0, crosshairSize)
+
+		for _, l in ipairs(crosshairLines) do
+			l.Color = activeTheme.primary
+			l.Visible = true
+		end
+	else
+		for _, l in ipairs(crosshairLines) do
+			l.Visible = false
+		end
+	end
+end
+
+crosshairSwitch.MouseButton1Click:Connect(function()
+	if not Drawing then
+		showNotif("⚠️ WARNING", "Executor tidak support Drawing API", Color3.fromRGB(255, 80, 80))
+		return
+	end
+	crosshairEnabled = not crosshairEnabled
+	setCrosshair(crosshairEnabled)
+	updateCrosshair()
+	showNotif("🎯 CROSSHAIR", crosshairEnabled and "Aktif!" or "Dimatikan", activeTheme.primary)
+end)
+
+createHybridSliderRow(visPage, "📐", "CROSSHAIR SIZE", 5, 30, 10, function(v)
+	crosshairSize = v
+	updateCrosshair()
+end)
+
+-- Player ESP Engine
+local espEnabled = false
+local espSwitch, setEsp, getEsp = createToggleRow(visPage, "👁️", "PLAYER ESP / HIGHLIGHT")
+
+local function applyEspToCharacter(char)
+	if not char then return end
+	local hl = char:FindFirstChild("AeroESP")
+	if not hl then
+		hl = Instance.new("Highlight")
+		hl.Name = "AeroESP"
+		hl.FillColor = activeTheme.primary
+		hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+		hl.FillTransparency = 0.5
+		hl.OutlineTransparency = 0.1
+		hl.Parent = char
+	end
+	hl.Enabled = espEnabled
+	hl.FillColor = activeTheme.primary
+end
+
+local function updateAllEsp()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= localPlayer and p.Character then
+			applyEspToCharacter(p.Character)
+		end
+	end
+end
+
+espSwitch.MouseButton1Click:Connect(function()
+	espEnabled = not espEnabled
+	setEsp(espEnabled)
+	updateAllEsp()
+	showNotif("👁️ PLAYER ESP", espEnabled and "Aktif!" or "Dimatikan", activeTheme.primary)
+end)
+
+Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(function(char)
+		task.wait(0.5)
+		if espEnabled then applyEspToCharacter(char) end
+	end)
+end)
+
+local themeBtn = Instance.new("TextButton")
+themeBtn.Size = UDim2.new(0.92, 0, 0, 28)
+themeBtn.BackgroundColor3 = Color3.fromRGB(18, 24, 36)
+themeBtn.Text = ""
+themeBtn.AutoButtonColor = false
+themeBtn.ZIndex = 8
+themeBtn.Parent = visPage
+
+local themeCorner = Instance.new("UICorner")
+themeCorner.CornerRadius = UDim.new(0, 5)
+themeCorner.Parent = themeBtn
+
+local themeStroke = Instance.new("UIStroke")
+themeStroke.Color = Color3.fromRGB(35, 48, 70)
+themeStroke.Thickness = 1
+themeStroke.Parent = themeBtn
+
+local themeLbl = Instance.new("TextLabel")
+themeLbl.Size = UDim2.new(1, -12, 1, 0)
+themeLbl.Position = UDim2.new(0, 6, 0, 0)
+themeLbl.BackgroundTransparency = 1
+themeLbl.Text = "🎨 THEME: CYAN NEON"
+themeLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+themeLbl.Font = Enum.Font.GothamBold
+themeLbl.TextScaled = true
+themeLbl.TextXAlignment = Enum.TextXAlignment.Left
+themeLbl.ZIndex = 9
+themeLbl.Parent = themeBtn
+
+local themeLblConstraint = Instance.new("UITextSizeConstraint")
+themeLblConstraint.MaxTextSize = 8.5
+themeLblConstraint.MinTextSize = 6
+themeLblConstraint.Parent = themeLbl
+
+-- ===================================================
+-- ⚡ ULTRA GUI LOGGER FOR HTTPGET (Modern Redesign Integrated)
+-- ===================================================
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = screenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+MainFrame.Position = UDim2.new(0.08, 0, 0.2, 0)
+MainFrame.Size = UDim2.new(0, 440, 0, 320)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = false
+MainFrame.ZIndex = 60
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(114, 137, 218)
+MainStroke.Thickness = 1.5
+MainStroke.Parent = MainFrame
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Name = "Header"
+Header.Parent = MainFrame
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 34)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.ZIndex = 61
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 10)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Parent = Header
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Size = UDim2.new(0.45, 0, 1, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "⚡ HTTPGet Logger"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 62
+
+local CounterLabel = Instance.new("TextLabel")
+CounterLabel.Parent = Header
+CounterLabel.BackgroundTransparency = 1
+CounterLabel.Position = UDim2.new(0.48, 0, 0, 0)
+CounterLabel.Size = UDim2.new(0.2, 0, 1, 0)
+CounterLabel.Font = Enum.Font.GothamSemibold
+CounterLabel.Text = "Total: 0"
+CounterLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+CounterLabel.TextSize = 11
+CounterLabel.ZIndex = 62
+
+local ClearAllBtn = Instance.new("TextButton")
+ClearAllBtn.Parent = Header
+ClearAllBtn.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+ClearAllBtn.Position = UDim2.new(1, -100, 0, 8)
+ClearAllBtn.Size = UDim2.new(0, 60, 0, 24)
+ClearAllBtn.Font = Enum.Font.GothamBold
+ClearAllBtn.Text = "Clear All"
+ClearAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearAllBtn.TextSize = 10
+ClearAllBtn.ZIndex = 62
+
+local ClearCorner = Instance.new("UICorner")
+ClearCorner.CornerRadius = UDim.new(0, 6)
+ClearCorner.Parent = ClearAllBtn
+
+local CloseLoggerBtn = Instance.new("TextButton")
+CloseLoggerBtn.Parent = Header
+CloseLoggerBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+CloseLoggerBtn.Position = UDim2.new(1, -32, 0, 8)
+CloseLoggerBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseLoggerBtn.Font = Enum.Font.GothamBold
+CloseLoggerBtn.Text = "✕"
+CloseLoggerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseLoggerBtn.TextSize = 11
+CloseLoggerBtn.ZIndex = 62
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseLoggerBtn
+
+CloseLoggerBtn.MouseButton1Click:Connect(function()
+	MainFrame.Visible = false
+end)
+
+-- Search Box
+local SearchBox = Instance.new("TextBox")
+SearchBox.Parent = MainFrame
+SearchBox.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+SearchBox.Position = UDim2.new(0, 10, 0, 48)
+SearchBox.Size = UDim2.new(1, -20, 0, 28)
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.PlaceholderText = "🔍 Cari URL / Filter..."
+SearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+SearchBox.Text = ""
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.TextSize = 11
+SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+SearchBox.ZIndex = 61
+
+local SearchCorner = Instance.new("UICorner")
+SearchCorner.CornerRadius = UDim.new(0, 6)
+SearchCorner.Parent = SearchBox
+
+local SearchPadding = Instance.new("UIPadding")
+SearchPadding.PaddingLeft = UDim.new(0, 8)
+SearchPadding.Parent = SearchBox
+
+-- Scroll Container
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Parent = MainFrame
+Scroll.BackgroundTransparency = 1
+Scroll.Position = UDim2.new(0, 10, 0, 82)
+Scroll.Size = UDim2.new(1, -20, 1, -90)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+Scroll.ScrollBarThickness = 4
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(114, 137, 218)
+Scroll.ZIndex = 61
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Scroll
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 6)
+
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	Scroll.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 5)
+end)
+
+local capturedLinks = {}
+local totalCount = 0
+
+local function updateCounter()
+	CounterLabel.Text = "Total: " .. tostring(totalCount)
+end
+
+local function addLinkToGui(url)
+	if not url or typeof(url) ~= "string" or capturedLinks[url] then return end
+
+	totalCount = totalCount + 1
+	updateCounter()
+	showNotif("⚡ LOGGER", "HTTPGet Link Terdeteksi!", activeTheme.primary)
+
+	local ItemFrame = Instance.new("Frame")
+	ItemFrame.Name = "LogItem"
+	ItemFrame.Parent = Scroll
+	ItemFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+	ItemFrame.Size = UDim2.new(1, 0, 0, 42)
+	ItemFrame.ZIndex = 62
+
+	local ItemCorner = Instance.new("UICorner")
+	ItemCorner.CornerRadius = UDim.new(0, 6)
+	ItemCorner.Parent = ItemFrame
+
+	local TextScroll = Instance.new("ScrollingFrame")
+	TextScroll.Parent = ItemFrame
+	TextScroll.BackgroundTransparency = 1
+	TextScroll.Position = UDim2.new(0, 8, 0, 4)
+	TextScroll.Size = UDim2.new(1, -145, 1, -8)
+	TextScroll.CanvasSize = UDim2.new(2, 0, 0, 0)
+	TextScroll.ScrollBarThickness = 2
+	TextScroll.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 100)
+	TextScroll.ZIndex = 63
+
+	local UrlText = Instance.new("TextLabel")
+	UrlText.Parent = TextScroll
+	UrlText.BackgroundTransparency = 1
+	UrlText.Size = UDim2.new(1, 0, 1, 0)
+	UrlText.Font = Enum.Font.Code
+	UrlText.Text = url
+	UrlText.TextColor3 = Color3.fromRGB(220, 220, 240)
+	UrlText.TextSize = 10
+	UrlText.TextXAlignment = Enum.TextXAlignment.Left
+	UrlText.ZIndex = 63
+
+	local CopyBtn = Instance.new("TextButton")
+	CopyBtn.Parent = ItemFrame
+	CopyBtn.BackgroundColor3 = Color3.fromRGB(114, 137, 218)
+	CopyBtn.Position = UDim2.new(1, -130, 0, 8)
+	CopyBtn.Size = UDim2.new(0, 48, 0, 26)
+	CopyBtn.Font = Enum.Font.GothamBold
+	CopyBtn.Text = "Copy"
+	CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	CopyBtn.TextSize = 9.5
+	CopyBtn.ZIndex = 63
+
+	local CopyCorner = Instance.new("UICorner")
+	CopyCorner.CornerRadius = UDim.new(0, 5)
+	CopyCorner.Parent = CopyBtn
+
+	local LoadstringBtn = Instance.new("TextButton")
+	LoadstringBtn.Parent = ItemFrame
+	LoadstringBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+	LoadstringBtn.Position = UDim2.new(1, -78, 0, 8)
+	LoadstringBtn.Size = UDim2.new(0, 48, 0, 26)
+	LoadstringBtn.Font = Enum.Font.GothamBold
+	LoadstringBtn.Text = "Load"
+	LoadstringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	LoadstringBtn.TextSize = 9.5
+	LoadstringBtn.ZIndex = 63
+
+	local LoadCorner = Instance.new("UICorner")
+	LoadCorner.CornerRadius = UDim.new(0, 5)
+	LoadCorner.Parent = LoadstringBtn
+
+	local DeleteBtn = Instance.new("TextButton")
+	DeleteBtn.Parent = ItemFrame
+	DeleteBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+	DeleteBtn.Position = UDim2.new(1, -25, 0, 8)
+	DeleteBtn.Size = UDim2.new(0, 20, 0, 26)
+	DeleteBtn.Font = Enum.Font.GothamBold
+	DeleteBtn.Text = "✕"
+	DeleteBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+	DeleteBtn.TextSize = 11
+	DeleteBtn.ZIndex = 63
+
+	local DelCorner = Instance.new("UICorner")
+	DelCorner.CornerRadius = UDim.new(0, 5)
+	DelCorner.Parent = DeleteBtn
+
+	capturedLinks[url] = ItemFrame
+
+	CopyBtn.MouseButton1Click:Connect(function()
+		if setclipboard then
+			setclipboard(url)
+			CopyBtn.Text = "Done!"
+			task.wait(1)
+			CopyBtn.Text = "Copy"
+		end
+	end)
+
+	LoadstringBtn.MouseButton1Click:Connect(function()
+		if setclipboard then
+			local formatted = 'loadstring(game:HttpGet("' .. url .. '"))()'
+			setclipboard(formatted)
+			LoadstringBtn.Text = "Done!"
+			task.wait(1)
+			LoadstringBtn.Text = "Load"
+		end
+	end)
+
+	DeleteBtn.MouseButton1Click:Connect(function()
+		ItemFrame:Destroy()
+		capturedLinks[url] = nil
+		totalCount = math.max(0, totalCount - 1)
+		updateCounter()
+	end)
+end
+
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	local query = string.lower(SearchBox.Text)
+	for url, itemFrame in pairs(capturedLinks) do
+		if itemFrame and itemFrame.Parent then
+			if query == "" or string.find(string.lower(url), query, 1, true) then
+				itemFrame.Visible = true
+			else
+				itemFrame.Visible = false
+			end
+		end
+	end
+end)
+
+ClearAllBtn.MouseButton1Click:Connect(function()
+	for _, child in ipairs(Scroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	capturedLinks = {}
+	totalCount = 0
+	updateCounter()
+end)
+
+-- Hook System Dual Layer
+if hookfunction then
+	local oldHttpGet
+	oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
+		task.spawn(function() addLinkToGui(url) end)
+		return oldHttpGet(self, url, ...)
+	end)
+end
+
+if hookmetamethod then
+	local oldNamecall
+	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+		local method = getnamecallmethod()
+		local args = {...}
+
+		if isQueueActive and (method == "FireServer" or method == "fireServer") then
+			if self:IsA("RemoteEvent") then
+				table.insert(remoteQueue, { remote = self, arguments = args })
+				return nil
+			end
+		end
+
+		if string.lower(method) == "httpget" or string.lower(method) == "httpgetasync" then
+			task.spawn(function() addLinkToGui(args[1]) end)
+		end
+
+		return oldNamecall(self, ...)
+	end)
+end
+
+-- Tombol Pemanggil UI Logger di TAB UTIL
+createButtonRow(utilPage, "⚡", "OPEN MODERN HTTPLOGGER", function()
+	MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- ==========================================
+-- 📍 CFRAME FINDER ENGINE
+-- ==========================================
+local cframeBoxContainer = Instance.new("Frame")
+cframeBoxContainer.Size = UDim2.new(0.92, 0, 0, 48)
+cframeBoxContainer.BackgroundColor3 = Color3.fromRGB(18, 24, 36)
+cframeBoxContainer.ZIndex = 8
+cframeBoxContainer.Parent = utilPage
+
+local cframeBoxCorner = Instance.new("UICorner")
+cframeBoxCorner.CornerRadius = UDim.new(0, 5)
+cframeBoxCorner.Parent = cframeBoxContainer
+
+local cframeBoxStroke = Instance.new("UIStroke")
+cframeBoxStroke.Color = Color3.fromRGB(35, 48, 70)
+cframeBoxStroke.Thickness = 1
+cframeBoxStroke.Parent = cframeBoxContainer
+
+local cframeInputBox = Instance.new("TextBox")
+cframeInputBox.Size = UDim2.new(1, -10, 1, -10)
+cframeInputBox.Position = UDim2.new(0, 5, 0, 5)
+cframeInputBox.BackgroundTransparency = 1
+cframeInputBox.TextColor3 = Color3.fromRGB(0, 255, 150)
+cframeInputBox.Font = Enum.Font.Code
+cframeInputBox.TextSize = 8.5
+cframeInputBox.TextWrapped = true
+cframeInputBox.ClearTextOnFocus = false
+cframeInputBox.Text = "CFrame.new(0, 0, 0)"
+cframeInputBox.ZIndex = 9
+cframeInputBox.Parent = cframeBoxContainer
+
+local liveCFrame = CFrame.new()
+local liveVector = Vector3.zero
+
+RunService.RenderStepped:Connect(function()
+	local char = localPlayer.Character
+	local hrp = char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("PrimaryPart"))
+	if hrp then
+		liveCFrame = hrp.CFrame
+		liveVector = hrp.Position
+		if not cframeInputBox:IsFocused() then
+			local cfStr = string.format("CFrame.new(%.2f, %.2f, %.2f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f)", liveCFrame:GetComponents())
+			cframeInputBox.Text = cfStr
+		end
+	end
+end)
+
+createButtonRow(utilPage, "📋", "COPY CFRAME", function()
+	local cfStr = string.format("CFrame.new(%s)", tostring(liveCFrame))
+	if setclipboard then
+		setclipboard(cfStr)
+		showNotif("📋 COPIED", "CFrame berhasil disalin!", activeTheme.primary)
+	else
+		showNotif("⚠️ ERROR", "Executor tidak support setclipboard", Color3.fromRGB(255, 80, 80))
+	end
+end)
+
+createButtonRow(utilPage, "📍", "COPY VECTOR3", function()
+	local posStr = string.format("Vector3.new(%.2f, %.2f, %.2f)", liveVector.X, liveVector.Y, liveVector.Z)
+	if setclipboard then
+		setclipboard(posStr)
+		showNotif("📍 COPIED", "Vector3 berhasil disalin!", activeTheme.primary)
+	else
+		showNotif("⚠️ ERROR", "Executor tidak support setclipboard", Color3.fromRGB(255, 80, 80))
+	end
+end)
+
+createButtonRow(utilPage, "🚀", "TELEPORT TO INPUT CFRAME", function()
+	local char = localPlayer.Character
+	if char and char:FindFirstChild("HumanoidRootPart") then
+		local txt = cframeInputBox.Text
+		local nums = {}
+		for num in string.gmatch(txt, "[-%d%.]+") do
+			table.insert(nums, tonumber(num))
+		end
+		
+		if #nums >= 3 then
+			if #nums >= 12 then
+				char:PivotTo(CFrame.new(unpack(nums)))
+			else
+				char:PivotTo(CFrame.new(nums[1], nums[2], nums[3]))
+			end
+			showNotif("🚀 TELEPORTED", "Berhasil TP ke CFrame Input!", activeTheme.primary)
+		else
+			showNotif("⚠️ ERROR", "Format CFrame/Vector3 tidak valid!", Color3.fromRGB(255, 80, 80))
+		end
+	end
+end)
+
+-- ==========================================
+-- 🛡️ ANTI TELEPORT-BACK ENGINE
+-- ==========================================
+local antiTpBackActive = false
+local antiTpBackSwitch, setAntiTpBack, getAntiTpBack = createToggleRow(utilPage, "🛡️", "ANTI TP-BACK")
+local lastValidCFrame = nil
+local tpThreshold = 60
+
+RunService.Heartbeat:Connect(function()
+	if not antiTpBackActive then return end
+	local char = localPlayer.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		if lastValidCFrame then
+			local dist = (hrp.Position - lastValidCFrame.Position).Magnitude
+			if dist > tpThreshold then
+				hrp.CFrame = lastValidCFrame
+				showNotif("🛡️ ANTI TP-BACK", "Teleport balik dari server dicegah!", Color3.fromRGB(255, 170, 0))
+			else
+				lastValidCFrame = hrp.CFrame
+			end
+		else
+			lastValidCFrame = hrp.CFrame
+		end
+	end
+end)
+
+antiTpBackSwitch.MouseButton1Click:Connect(function()
+	antiTpBackActive = not antiTpBackActive
+	setAntiTpBack(antiTpBackActive)
+	if antiTpBackActive and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		lastValidCFrame = localPlayer.Character.HumanoidRootPart.CFrame
+	end
+	showNotif("🛡️ ANTI TP-BACK", antiTpBackActive and "Aktif! Mencegah TP-Back" or "Dimatikan", activeTheme.primary)
+end)
+
+-- ==========================================
+-- 📡 REMOTE SPAM ENGINE (CUSTOM ARGUMENTS / INVOKESERVER)
+-- ==========================================
+local spamDelayValue = 0.1
+local isSpammingRemote = false
+local remoteSpamThread = nil
+
+createHybridSliderRow(utilPage, "⏱️", "SPAM DELAY (s)", 0.01, 3.0, 0.1, function(v)
+	spamDelayValue = v
+end)
+
+local spamToggleSwitch, setSpamToggle, getSpamToggle = createToggleRow(utilPage, "📡", "TOGGLE REMOTE SPAM")
+
+local function startSpamming()
+	isSpammingRemote = true
+	showNotif("📡 REMOTE SPAM", "Spamming Training_TapBonus...", activeTheme.primary)
+
+	remoteSpamThread = task.spawn(function()
+		while isSpammingRemote do
+			pcall(function()
+				local args = {2}
+				ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Training_TapBonus"):InvokeServer(unpack(args))
+			end)
+			task.wait(spamDelayValue)
+		end
+	end)
+end
+
+local function stopSpamming()
+	isSpammingRemote = false
+	if remoteSpamThread then
+		task.cancel(remoteSpamThread)
+		remoteSpamThread = nil
+	end
+	showNotif("📡 REMOTE SPAM", "Spamming dihentikan", Color3.fromRGB(255, 80, 80))
+end
+
+spamToggleSwitch.MouseButton1Click:Connect(function()
+	if isSpammingRemote then
+		setSpamToggle(false)
+		stopSpamming()
+	else
+		setSpamToggle(true)
+		startSpamming()
+	end
+end)
+
+createButtonRow(utilPage, "💥", "FIRE REMOTE ONCE", function()
+	pcall(function()
+		local args = {2}
+		ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Training_TapBonus"):InvokeServer(unpack(args))
+		showNotif("📡 REMOTE FIRED", "Berhasil kirim Training_TapBonus", activeTheme.primary)
+	end)
+end)
+
+-- ==========================================
+-- ⚡ UTILITY PAGE SETUP (REMOTE QUEUE)
+-- ==========================================
+local remoteQueueSwitch, setRemoteQueue, getRemoteQueue = createToggleRow(utilPage, "🛑", "LAG SWITCH / QUEUE")
+
+local queueStatusLbl = Instance.new("TextLabel")
+queueStatusLbl.Size = UDim2.new(0.92, 0, 0, 16)
+queueStatusLbl.BackgroundTransparency = 1
+queueStatusLbl.Text = "Pending Remotes: 0"
+queueStatusLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+queueStatusLbl.Font = Enum.Font.GothamBold
+queueStatusLbl.TextSize = 8
+queueStatusLbl.Parent = utilPage
+
+local function flushQueue()
+	local count = #remoteQueue
+	for _, item in ipairs(remoteQueue) do
+		pcall(function()
+			item.remote:FireServer(unpack(item.arguments))
+		end)
+	end
+	table.clear(remoteQueue)
+	return count
+end
+
+remoteQueueSwitch.MouseButton1Click:Connect(function()
+	if not hookmetamethod then
+		showNotif("⚠️ ERROR", "Executor tidak mendukung hookmetamethod", Color3.fromRGB(255, 80, 80))
+		return
+	end
+
+	isQueueActive = not isQueueActive
+	setRemoteQueue(isQueueActive)
+
+	if isQueueActive then
+		showNotif("🛑 REMOTE QUEUE", "Status: PAUSED / LAG (ON)", Color3.fromRGB(255, 70, 70))
+	else
+		local totalExecuted = flushQueue()
+		queueStatusLbl.Text = "Pending Remotes: 0"
+		showNotif("🚀 REMOTE QUEUE", "Executed " .. tostring(totalExecuted) .. " remotes!", activeTheme.primary)
+	end
+end)
+
+createButtonRow(utilPage, "💥", "FLUSH QUEUE NOW", function()
+	if #remoteQueue > 0 then
+		local totalExecuted = flushQueue()
+		queueStatusLbl.Text = "Pending Remotes: 0"
+		showNotif("🚀 FLUSH QUEUE", "Executed " .. tostring(totalExecuted) .. " remotes!", activeTheme.primary)
+	else
+		showNotif("ℹ️ QUEUE EMPTY", "Tidak ada remote tertahan", activeTheme.primary)
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if isQueueActive then
+		queueStatusLbl.Text = "Pending Remotes: " .. tostring(#remoteQueue)
+	end
+end)
+
+local clickTpSwitch, setClickTp, getClickTp = createToggleRow(utilPage, "🎯", "CLICK TP [CTRL]")
+local noclipSwitch, setNoclip, getNoclip = createToggleRow(utilPage, "👻", "NOCLIP MODE [N]")
+local infJumpSwitch, setInfJump, getInfJump = createToggleRow(utilPage, "🦘", "INFINITE JUMP")
+
+-- Anti-AFK Engine
+local antiAfkActive = false
+local antiAfkSwitch, setAntiAfk, getAntiAfk = createToggleRow(utilPage, "⏰", "ANTI-AFK DISCONNECT")
+
+localPlayer.Idled:Connect(function()
+	if antiAfkActive then
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+		showNotif("⏰ ANTI-AFK", "Interaksi otomatis mencegah Kick AFK", activeTheme.primary)
+	end
+end)
+
+antiAfkSwitch.MouseButton1Click:Connect(function()
+	antiAfkActive = not antiAfkActive
+	setAntiAfk(antiAfkActive)
+	showNotif("⏰ ANTI-AFK", antiAfkActive and "Aktif! Bebas AFK", activeTheme.primary)
+end)
+
+createHybridSliderRow(utilPage, "👟", "WALKSPEED", 16, 250, 16, function(v)
+	local char = localPlayer.Character
+	if char and char:FindFirstChildOfClass("Humanoid") then
+		char:FindFirstChildOfClass("Humanoid").WalkSpeed = v
+	end
+end)
+
+createHybridSliderRow(utilPage, "🖥️", "MAX FPS", 30, 360, 60, function(v)
+	if setfpscap then
+		setfpscap(v)
+	end
+end)
+
+-- 📐 RESIZE HANDLE
+local resizeHandle = Instance.new("TextButton")
+resizeHandle.Size = UDim2.new(0, 20, 0, 20)
+resizeHandle.AnchorPoint = Vector2.new(1, 1)
+resizeHandle.Position = UDim2.new(1, 0, 1, 0)
+resizeHandle.BackgroundTransparency = 1
+resizeHandle.Text = "◢"
+resizeHandle.TextColor3 = Color3.fromRGB(120, 150, 180)
+resizeHandle.TextSize = 11
+resizeHandle.ZIndex = 20
+resizeHandle.Parent = mainContainer
+
+local isResizing = false
+local resizeStartPos, startSize
+
+resizeHandle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		isResizing = true
+		resizeStartPos = input.Position
+		startSize = mainContainer.AbsoluteSize
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - resizeStartPos
+		local newWidth = math.clamp(startSize.X + delta.X, 180, 450)
+		local newHeight = math.clamp(startSize.Y + delta.Y, 150, 500)
+		mainContainer.Size = UDim2.new(0, newWidth, 0, newHeight)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+		isResizing = false 
+	end
+end)
+
+-- Dragging Engine
+local dragging, dragInput, dragStart, startPos
+headerPanel.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainContainer.Position
+		input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+	end
+end)
+
+headerPanel.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		mainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+local isMinimized = false
+local function toggleMinimize()
+	isMinimized = not isMinimized
+	playSound(6895079853, 0.35, isMinimized and 0.8 or 1.2)
+	if isMinimized then
+		TweenService:Create(mainContainer, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+		task.delay(0.2, function()
+			mainContainer.Visible = false
+			fabBtn.Visible = true
+			TweenService:Create(fabBtn, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 40, 0, 40)}):Play()
+		end)
+	else
+		fabBtn.Visible = false
+		mainContainer.Visible = true
+		TweenService:Create(mainContainer, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 240, 0, 320)}):Play()
+	end
+end
+
+minBtn.MouseButton1Click:Connect(toggleMinimize)
+fabBtn.MouseButton1Click:Connect(toggleMinimize)
+
+themeBtn.MouseButton1Click:Connect(function()
+	currentThemeIdx = (currentThemeIdx % #themes) + 1
+	activeTheme = themes[currentThemeIdx]
+	themeLbl.Text = "🎨 THEME: " .. activeTheme.name
+
+	minBtn.TextColor3 = activeTheme.primary
+	headerLine.BackgroundColor3 = activeTheme.primary
+	mainStroke.Color = activeTheme.primary
+	fabStroke.Color = activeTheme.primary
+	tabIndicator.BackgroundColor3 = activeTheme.primary
+	mainContainer.BackgroundColor3 = activeTheme.bg
+	fabBtn.BackgroundColor3 = activeTheme.bg
+
+	strokeGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, activeTheme.primary),
+		ColorSequenceKeypoint.new(0.5, activeTheme.sec),
+		ColorSequenceKeypoint.new(1, activeTheme.primary)
+	})
+
+	for _, star in ipairs(starContainer:GetChildren()) do
+		if star:IsA("TextLabel") then star.TextColor3 = activeTheme.primary end
+	end
+
+	for _, t in pairs(tabs) do
+		t.page.ScrollBarImageColor3 = activeTheme.primary
+	end
+
+	tabs[activeTabIndex or 1].btn.TextColor3 = activeTheme.primary
+	if currentPlatform then currentPlatform.Color = activeTheme.primary end
+	updateCrosshair()
+	updateAllEsp()
+	showNotif("🎨 THEME APPLIED", activeTheme.name, activeTheme.primary)
+end)
+
+RunService.RenderStepped:Connect(function()
+	if not screenGui.Parent then return end
+	strokeGrad.Rotation = (tick() * 60) % 360
+	if crosshairEnabled then updateCrosshair() end
+end)
+
+-- Extra Utility Functions
+local infJumpActive = false
+infJumpSwitch.MouseButton1Click:Connect(function()
+	infJumpActive = not infJumpActive
+	setInfJump(infJumpActive)
+	showNotif("🦘 INFINITE JUMP", infJumpActive and "Aktif!" or "Dimatikan", activeTheme.primary)
+end)
+
+UserInputService.JumpRequest:Connect(function()
+	if infJumpActive then
+		local char = localPlayer.Character
+		if char and char:FindFirstChildOfClass("Humanoid") then
+			char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end
+end)
+
+local clickTpActive = false
+local function doTeleport()
+	local char = localPlayer.Character
+	if char and char:FindFirstChild("HumanoidRootPart") and mouse.Hit then
+		char:PivotTo(CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)))
+		showNotif("🎯 TELEPORTED", "Berhasil TP!", activeTheme.primary)
+	end
+end
+
+clickTpSwitch.MouseButton1Click:Connect(function()
+	clickTpActive = not clickTpActive
+	setClickTp(clickTpActive)
+	showNotif("🎯 CLICK TP", clickTpActive and "Tahan CTRL / Tap layar" or "Dimatikan", activeTheme.primary)
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if clickTpActive and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) or UserInputService.TouchEnabled then
+			doTeleport()
+		end
+	end
+end)
+
+local noclipEnabled = false
+local noclipConnection = nil
+
+local function toggleNoclip(val)
+	if val == nil then val = not noclipEnabled end
+	noclipEnabled = val
+	setNoclip(noclipEnabled)
+
+	if noclipEnabled then
+		showNotif("👻 NOCLIP", "Aktif! Menembus tembok", activeTheme.primary)
+		noclipConnection = RunService.Stepped:Connect(function()
+			local char = localPlayer.Character
+			if char then
+				for _, part in ipairs(char:GetDescendants()) do
+					if part:IsA("BasePart") and part.CanCollide then
+						part.CanCollide = false
+					end
+				end
+			end
+		end)
+	else
+		showNotif("👻 NOCLIP", "Dimatikan", Color3.fromRGB(255, 80, 80))
+		if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+	end
+end
+
+noclipSwitch.MouseButton1Click:Connect(function() toggleNoclip() end)
+
+-- Fly Engine
+local flyMode = "OFF"
+local currentStyle = "SUPERMAN" 
+local currentVelocity = Vector3.zero
+local currentRotationCFrame = CFrame.new()
+
+local flyConnection = nil
+local bodyVelocity = nil
+local bodyGyro = nil
+local activeVFX = {}
+
+styleBtn.MouseButton1Click:Connect(function()
+	playSound(6895079853, 0.3, 1.2)
+	if currentStyle == "SUPERMAN" then
+		currentStyle = "NINJA"
+		styleLbl.Text = "🥋 STYLE: NINJA DASH"
+		showNotif("🥋 STYLE", "Ninja Dash", activeTheme.primary)
+	elseif currentStyle == "NINJA" then
+		currentStyle = "HOVER"
+		styleLbl.Text = "🥋 STYLE: HOVER DASH"
+		showNotif("🥋 STYLE", "Hover Mode", activeTheme.primary)
+	else
+		currentStyle = "SUPERMAN"
+		styleLbl.Text = "🥋 STYLE: SUPERMAN"
+		showNotif("🥋 STYLE", "Superman", activeTheme.primary)
+	end
+end)
+
+fovSwitch.MouseButton1Click:Connect(function()
+	fovWarpActive = not fovWarpActive
+	setFovWarp(fovWarpActive)
+	showNotif("🌌 FOV WARP", fovWarpActive and "Aktif!" or "Dimatikan", activeTheme.primary)
+end)
+
+local function applyVisualFX(hrp)
+	for _, vfx in pairs(activeVFX) do if vfx then vfx:Destroy() end end
+	table.clear(activeVFX)
+
+	local attCenterTop = Instance.new("Attachment", hrp)
+	attCenterTop.Position = Vector3.new(0, 1.2, 0)
+	local attCenterBottom = Instance.new("Attachment", hrp)
+	attCenterBottom.Position = Vector3.new(0, -1.2, 0)
+
+	local bodyTrail = Instance.new("Trail", hrp)
+	bodyTrail.Attachment0 = attCenterTop
+	bodyTrail.Attachment1 = attCenterBottom
+	bodyTrail.Texture = "rbxassetid://6015897233"
+	bodyTrail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, activeTheme.primary),
+		ColorSequenceKeypoint.new(0.6, activeTheme.sec),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+	})
+	bodyTrail.WidthScale = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
+	bodyTrail.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1)})
+	bodyTrail.Lifetime = 0.35
+	bodyTrail.LightEmission = 0.95
+	bodyTrail.Enabled = false
+
+	local attCoreTop = Instance.new("Attachment", hrp)
+	attCoreTop.Position = Vector3.new(0, 0.4, 0)
+	local attCoreBottom = Instance.new("Attachment", hrp)
+	attCoreBottom.Position = Vector3.new(0, -0.4, 0)
+
+	local coreTrail = Instance.new("Trail", hrp)
+	coreTrail.Attachment0 = attCoreTop
+	coreTrail.Attachment1 = attCoreBottom
+	coreTrail.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, activeTheme.primary)
+	})
+	coreTrail.WidthScale = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 0)})
+	coreTrail.Lifetime = 0.25
+	coreTrail.LightEmission = 1
+	coreTrail.Enabled = false
+
+	local sparkAtt = Instance.new("Attachment", hrp)
+	local sparks = Instance.new("ParticleEmitter", sparkAtt)
+	sparks.Texture = "rbxassetid://2581223252"
+	sparks.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(1, activeTheme.primary)})
+	sparks.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0)})
+	sparks.Lifetime = NumberRange.new(0.2, 0.4)
+	sparks.Rate = 0
+	sparks.Speed = NumberRange.new(5, 10)
+	sparks.LightEmission = 1
+
+	table.insert(activeVFX, attCenterTop)
+	table.insert(activeVFX, attCenterBottom)
+	table.insert(activeVFX, bodyTrail)
+	table.insert(activeVFX, attCoreTop)
+	table.insert(activeVFX, attCoreBottom)
+	table.insert(activeVFX, coreTrail)
+	table.insert(activeVFX, sparkAtt)
+
+	return sparks, {bodyTrail, coreTrail}
+end
+
+local function updateUIState()
+	setAuto(flyMode == "AUTO", true)
+	setFree(flyMode == "FREE", true)
+end
+
+local function stopFlying()
+	if flyMode ~= "OFF" then
+		showNotif("🚀 DEACTIVATED", "Sistem terbang mati", Color3.fromRGB(255, 80, 80))
+	end
+	flyMode = "OFF"
+	updateUIState()
+
+	if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+	if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+	if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+	for _, vfx in pairs(activeVFX) do if vfx then vfx:Destroy() end end
+	table.clear(activeVFX)
+
+	local char = localPlayer.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then 
+			hum.PlatformStand = false
+			char:SetPrimaryPartCFrame(CFrame.new(char.PrimaryPart.Position) * CFrame.Angles(0, math.rad(char.PrimaryPart.Orientation.Y), 0))
+			TweenService:Create(hum, TweenInfo.new(0.4, Enum.EasingStyle.Cubic), {CameraOffset = Vector3.new(0, 0, 0)}):Play()
+		end
+	end
+	TweenService:Create(camera, TweenInfo.new(0.4, Enum.EasingStyle.Cubic), {FieldOfView = 70}):Play()
+end
+
+local function startFlying(mode)
+	stopFlying()
+
+	local char = localPlayer.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hrp or not hum then return end
+
+	flyMode = mode
+	updateUIState()
+
+	showNotif("🚀 " .. mode .. " FLY ACTIVE", "Speed: " .. tostring(flySpeedValue), activeTheme.primary)
+
+	hum.PlatformStand = true
+	local sparkParticles, trailList = applyVisualFX(hrp)
+
+	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	bodyVelocity.Velocity = Vector3.zero
+	bodyVelocity.Parent = hrp
+
+	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bodyGyro.P = 60000 
+	bodyGyro.D = 600   
+	bodyGyro.CFrame = hrp.CFrame
+	bodyGyro.Parent = hrp
+
+	currentVelocity = Vector3.zero
+	currentRotationCFrame = CFrame.new(Vector3.zero, camera.CFrame.LookVector)
+
+	TweenService:Create(hum, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {CameraOffset = Vector3.new(0, 1.1, 1.1)}):Play()
+
+	flyConnection = RunService.Heartbeat:Connect(function(dt)
+		if flyMode == "OFF" or not char or not hrp or not hum then
+			stopFlying()
+			return
+		end
+
+		local targetVelocity = Vector3.zero
+		local moveDir = hum.MoveDirection
+		local camCF = camera.CFrame
+		local bobbing = Vector3.new(0, math.sin(tick() * 5) * 1.2, 0)
+
+		if flyMode == "AUTO" then
+			targetVelocity = camCF.LookVector * flySpeedValue
+		elseif flyMode == "FREE" then
+			if moveDir.Magnitude > 0 then
+				local flatLook = Vector3.new(camCF.LookVector.X, 0, camCF.LookVector.Z)
+				flatLook = flatLook.Magnitude > 0.001 and flatLook.Unit or camCF.LookVector
+				local flatRight = Vector3.new(camCF.RightVector.X, 0, camCF.RightVector.Z).Unit
+
+				local forwardAmt = moveDir:Dot(flatLook)
+				local rightAmt = moveDir:Dot(flatRight)
+
+				local flyDir = (camCF.LookVector * forwardAmt) + (camCF.RightVector * rightAmt)
+				if flyDir.Magnitude > 0 then
+					targetVelocity = flyDir.Unit * flySpeedValue
+				end
+			else
+				targetVelocity = bobbing
+			end
+		end
+
+		local lookDir = (targetVelocity.Magnitude > 2) and targetVelocity.Unit or camCF.LookVector
+		local tiltAngle = math.rad(-30)
+		if currentStyle == "SUPERMAN" then tiltAngle = math.rad(-90)
+		elseif currentStyle == "HOVER" then tiltAngle = math.rad(-10) end
+
+		local targetRotation = CFrame.lookAt(Vector3.zero, lookDir) * CFrame.Angles(tiltAngle, 0, 0)
+
+		currentRotationCFrame = currentRotationCFrame:Lerp(targetRotation, dt * 7)
+		currentVelocity = currentVelocity:Lerp(targetVelocity, dt * 9)
+
+		bodyGyro.CFrame = currentRotationCFrame
+		bodyVelocity.Velocity = currentVelocity
+		
+		if fovWarpActive then
+			local speedRatio = math.clamp(targetVelocity.Magnitude / 300, 0, 1)
+			camera.FieldOfView = 70 + (speedRatio * 35)
+		end
+
+		local isMovingFast = targetVelocity.Magnitude > 5
+		if sparkParticles then sparkParticles.Rate = isMovingFast and math.clamp(flySpeedValue / 2, 5, 200) or 0 end
+		for _, tr in ipairs(trailList) do
+			if tr then tr.Enabled = isMovingFast end
+		end
+	end)
+end
+
+autoSwitch.MouseButton1Click:Connect(function()
+	if flyMode == "AUTO" then stopFlying() else startFlying("AUTO") end
+end)
+freeSwitch.MouseButton1Click:Connect(function()
+	if flyMode == "FREE" then stopFlying() else startFlying("FREE") end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == Enum.KeyCode.F then
+		if flyMode == "AUTO" then stopFlying() else startFlying("AUTO") end
+	elseif input.KeyCode == Enum.KeyCode.N then
+		toggleNoclip()
+	end
+end)
+
+localPlayer.CharacterAdded:Connect(function()
+	task.wait(0.5)
+	if flyMode ~= "OFF" then startFlying(flyMode) end
+end)
+
+showNotif("AERO ULTRA V12.6", "Anti TP-Back & Remote Spammer Loaded!", activeTheme.primary)
